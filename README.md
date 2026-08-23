@@ -2,7 +2,11 @@
 
 Investigation of what it would take to build a market-intelligence product on government and public data — especially SEC company financials — without unnecessary API calls or source flagging.
 
-Investigation, enhancements, and the gated build plan (project map, process map, phase work packages):
+Start here if you are implementing or using an AI coding agent:
+
+- **[docs/AI_GUIDE.md](docs/AI_GUIDE.md)** — collated rules, architecture, maps, and phase gates
+
+Background:
 
 - **[docs/MARKET_INTELLIGENCE_PLATFORM_INVESTIGATION.md](docs/MARKET_INTELLIGENCE_PLATFORM_INVESTIGATION.md)** — requirements and architecture
 - **[docs/BUILD_PLAN.md](docs/BUILD_PLAN.md)** — project map, process map, and build sequence

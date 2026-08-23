@@ -2,6 +2,8 @@
 
 This is the build plan for the platform described in [MARKET_INTELLIGENCE_PLATFORM_INVESTIGATION.md](./MARKET_INTELLIGENCE_PLATFORM_INVESTIGATION.md). It includes the **project map** (what is built, in what order, with what dependencies), the **process map** (how work and data move), and the **build sequence** (what “done” means at each gate).
 
+Agents and implementers should start with the collated [AI_GUIDE.md](./AI_GUIDE.md).
+
 It does not estimate calendar duration. Difficulty is described by what must exist, what it depends on, and what breaks if you skip it.
 
 **North star:** users never hit source APIs. They query a warehouse of comparable, sourced facts. A single identified ingest plane pulls government/public data without being flagged.
