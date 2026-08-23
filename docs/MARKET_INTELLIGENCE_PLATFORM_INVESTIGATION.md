@@ -1062,3 +1062,4 @@ This is how mapping quality compounds. Without it, the resolver rots after the f
 
 Items 1–4 change product quality immediately. Items 5–8 are what keep you from being flagged, wrong, or slow once the user base is real.
 
+The sequenced project map, process map, and build plan are in [BUILD_PLAN.md](./BUILD_PLAN.md).
