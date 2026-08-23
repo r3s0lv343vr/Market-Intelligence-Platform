@@ -7,6 +7,7 @@ This document is an investigation of what it would take to build a market-intell
 - Keeps that corpus current as quarterly (and intra-quarter) filings arrive
 - Serves **1,500+ users** with fast access
 - Can later add AI assistance, financial modeling, statistics, and econometrics
+- Can be enhanced beyond the first warehouse (events, as-of queries, semantic layer — §§19–20)
 
 It is not an implementation plan for a specific stack, and it is not investment advice. It is a requirements and architecture investigation: what is hard, what is already solved by public data products, what will get a platform blocked, and what to build first versus later.
 
@@ -784,3 +785,280 @@ That is already a market-intelligence platform. Modeling, AI, statistics depth, 
 - https://fiscaldata.treasury.gov/api-documentation/
 - https://www.eia.gov/opendata/documentation.php
 - https://api.data.gov/
+
+---
+
+## 19. What would further enhance the platform
+
+The first build in §17 is a trustworthy fundamentals product. These enhancements are what turn that into a platform people stay in — ranked by how much they improve **decisions**, not by how impressive they sound.
+
+Do not add all of this. Each item below assumes the warehouse, resolver, and “users never hit source APIs” rule already exist.
+
+### 19.1 Highest leverage (still mostly public data)
+
+**1. An event layer, not just statements**
+
+10-K/10-Q facts are the spine. Intelligence is often in *what happened between quarters*:
+
+| Event | Source | Why it changes decisions |
+| --- | --- | --- |
+| Material events | 8-K **item codes** (2.02 earnings, 2.05/2.06 impairments, 1.01 agreements, 5.02 officer changes, 4.02 non-reliance) | Same-day context; do not treat every 8-K as equal |
+| Insider activity | Forms 3/4/5 | Clustered open-market buys ≠ option grants or tax withholdings (`transactionCode`) |
+| Institutional ownership | 13F-HR (+ amendments) | Crowding, new/exited names; 45-day lag is a feature you must label |
+| Activist / large stakes | SC 13D / 13G | Control and campaign risk |
+| Restatements and amendments | 10-K/A, 10-Q/A, 8-K item 4.02 | The difference between “as we knew it” and “as it is now” |
+| Auditor / ICFR | 10-K auditor, material weakness, later-filed correspondence | Quality of the numbers themselves |
+
+Parse these from **daily `form.idx` / `master.idx`**, then fetch only new accessions. Amendments (`4/A`, `13F-HR/A`) are a first-class data problem: decide whether they replace, extend, or sit beside the original.
+
+**2. A company knowledge graph**
+
+Join keys are not enough. Enhance `entity` into a graph:
+
+- Issuer ↔ securities ↔ CIK history ↔ LEI (GLEIF is public)
+- Officers/directors (DEF 14A, Form 4 reporting owners)
+- Subsidiaries and former names
+- Mentioned counterparties, customers, and suppliers extracted from MD&A (search, not a live crawl)
+- Federal contract awards via USAspending (demand overlay for defense, IT, health)
+
+This is what lets a user click from a margin miss to “three customers cut in the 10-K” or “the CFO sold stock the same week.”
+
+**3. As-of time machine in the product UI**
+
+Every company page and screen should toggle:
+
+- **Latest restated** (how the company looks today)
+- **As-of date T** (what a diligent reader could have known on T)
+
+Without this, models, stats, and econometrics will silently cheat. With it, the platform becomes a research tool instead of a revised-history browser. See §20.1 for the backend primitive.
+
+**4. Filing diffs and “what changed”**
+
+Structured deltas (mapped lines vs prior period and vs year-ago) plus section diffs (MD&A, risk factors, liquidity). This is the feature users will open every earnings morning. AI can narrate it **after** the structured delta exists.
+
+**5. Industry statement templates and operating KPIs**
+
+A second corporate template is not an enhancement; **templates per industry** are:
+
+- Banks: NII, NIM, provision, NPL / NCO, CET1 — not “revenue”
+- Insurers: premiums, combined ratio concepts where tagged
+- REITs: FFO-like constructs only when you can defend the derivation
+- Energy: production / realized price overlays from EIA + company segments
+- Software: remaining performance obligations and deferred revenue when tagged
+
+Unmapped industry KPIs should show as gaps, not invented totals.
+
+**6. Decision workflow**
+
+Data without a place to decide gets exported to Excel and never comes back.
+
+- Dated thesis / decision journal linked to specific facts and accessions
+- Shared team workspaces, comments on table cells
+- Composite alerts: “10-Q filed AND TTM FCF down AND clustered Form 4 sales AND 8-K 2.02”
+- One-click “decision pack” (PDF/Excel): statements, peers, overlay, events, sources
+
+This is how 1,500 users become a product rather than 1,500 one-off browsers.
+
+**7. Quality and forensic flags (explainable)**
+
+Not a secret “fraud score.” Explicit, documented checks:
+
+- Balance-sheet identity residual after mapping
+- Dual-tagged revenue (same period, two tags, same or different values)
+- Accruals vs cash (net income − CFO) extremes vs peers
+- Share-count jumps, dilutive issuance, buyback authorization vs actual treasury
+- Sudden auditor change, late filer, NT 10-K/10-Q
+- Mapping confidence and coverage % for this company/period
+
+Users trust flags they can open. They do not trust an opaque grade.
+
+### 19.2 High leverage once the spine is trusted
+
+**8. Licensed market data (when you need multiples)**
+
+Prices, splits, and consensus estimates are the main *commercial* enhancement. They unlock EV, yield, surprise, and live comps. Until then, stay honest: “filing-based,” not “cheap.”
+
+**9. Transcripts and earnings releases**
+
+8-K exhibits and later paid transcript feeds. Pair the **release** (item 2.02) with the **later 10-Q** to show guidance language vs subsequent actuals.
+
+**10. Notes and dimensions**
+
+DERA notes datasets and XBRL dimensions unlock segments, geographic revenue, and footnote search. This is how “the company” becomes “the business lines.” It is also how storage and mapping cost jump.
+
+**11. International filers**
+
+SEDAR+, Companies House, ESSEF/ESEF. Only after US mapping QA is boring. Entity resolution gets harder, not easier.
+
+**12. User API and semantic metrics**
+
+A read API over **gold** metrics (not raw tags) so power users and internal tools share one definition of TTM FCF. This is also what makes AI tool-calling safe.
+
+### 19.3 What looks like an enhancement but often is not
+
+| Tempting add | Why to wait |
+| --- | --- |
+| General chatbot on day one | Hallucinates numbers; trains users to distrust you |
+| Clone of FRED or a wholesale macro warehouse | Terms, copyright, and you still need original agencies |
+| Autonomous buy/sell signals | Compliance change, not a feature |
+| Every EDGAR form type | Noise; coverage tiers exist for a reason |
+| Training your own market LLM | Cost + legal; retrieval over your warehouse is enough |
+| Real-time tick UI | Different product; different vendor contracts |
+
+---
+
+## 20. What would further enhance the backend
+
+The first backend is “bulk ingest + resolver + packs.” These are the upgrades that make that backend **correct under restatement**, **fast under filing season**, and **safe to attach models/AI to**.
+
+### 20.1 Point-in-time as a query primitive (the single biggest backend upgrade)
+
+Store facts bi-temporally:
+
+| Clock | Meaning |
+| --- | --- |
+| `period_end` / `instant` | The economic period the number is about |
+| `filed_at` / `accepted_at` | When the market could have known it |
+| `superseded_at` | When a later filing restated it (null if current) |
+
+Every serving path — company pack, screener, model actuals, stats, econometrics, AI tools — should accept `as_of`. Implementation pattern: keep both **original** and **latest** values; never overwrite bronze.
+
+This is also the feature-store contract if you later train models: joins must be `filed_at <= as_of`, never “latest revenue for FY2022.”
+
+### 20.2 Semantic layer (one definition, every consumer)
+
+Define metrics once (`revenue`, `ttm_fcf`, `net_debt`, `roic`) with:
+
+- Formula
+- Industry template
+- Unit and scale
+- Required provenance
+- Known failure modes (banks, negative equity, 53-week years)
+
+UI, Excel export, user API, model engine, and LLM tools all call this layer. If “FCF” is re-derived in four codepaths, the platform will disagree with itself.
+
+Treat mapping rules as **versioned code** (dbt seeds, YAML synonym sets). Deploy mapping changes like software: golden tests on known 10-Ks, canary on a sector, then rebuild gold from silver without re-hitting the SEC.
+
+### 20.3 XBRL calculation and presentation linkbases
+
+Companyfacts tags are not enough for a serious resolver.
+
+- **Presentation** (`PRE` / linkbase): order and labels as the filer showed them — needed to reconstruct a statement a human recognizes.
+- **Calculation**: parent/child roll-ups, including how a custom extension rolls into a standard total. This is how you detect double-counting and recover extensions that a synonym list will miss.
+
+Add identity tests as warehouse assertions: assets ≈ liabilities + equity; cash roll-forward; dual-tag revenue dedup. Failures become mapping tickets, not silent screen results.
+
+### 20.4 Event-driven gold, not nightly-only
+
+Nightly bulk is the safety net. Enhancement:
+
+```text
+daily index / Atom
+    → new accession (deduped)
+    → fetch once, store bronze
+    → parse → silver
+    → remap affected (cik, periods)
+    → rebuild company_pack + peer_stat fragments
+    → evaluate alert rules
+    → invalidate caches by pack version
+```
+
+Users opening a name at 4:20 p.m. on a 10-K day should see **your** processed pack, not a spinner that calls EDGAR.
+
+Priority queues: Tier A watchlist names first, then the rest. Still one requester identity; priority is **ordering**, not more IPs.
+
+### 20.5 Lineage, contracts, and freshness SLIs
+
+For every gold cell, store enough lineage to answer “which accession and which mapping version produced this?”
+
+Operate the ingest plane like a product:
+
+| SLI | Why |
+| --- | --- |
+| Source 429/403 rate | Flagging risk |
+| Budget remaining (BLS daily, BEA per-minute, SEC req/s) | Stay polite |
+| Time from EDGAR disseminate → pack available (Tier A) | Filing-season promise |
+| Mapping coverage % by template | Product honesty |
+| Identity-test fail count | Silent corruption |
+| Bronze checksum / replay success | You can rebuild without the source |
+
+Dead-letter queues + replay from bronze are mandatory. If a zip is bad, you must not “fix” it by recrawling HTML.
+
+### 20.6 Serving architecture upgrades (swift access at 1,500+)
+
+| Upgrade | Effect |
+| --- | --- |
+| **Versioned company packs** | Immutable JSON/Parquet artifact per `(cik, as_of, mapping_version)` |
+| **Fragment cache** | Statements, peers, overlay, events cached separately; a new Form 4 does not rebuild the income statement |
+| **Result cache keyed by input hash** | Same screen / same as_of is free |
+| **CQRS** | Writes (ingest, mapping rebuild) never contend with pack reads |
+| **OLAP store** (ClickHouse / warehouse / Iceberg) | Screens and percentiles stay off Postgres |
+| **Hot/cold tiers** | Latest 8–12 quarters hot; deep history in Parquet |
+| **Fiscal calendar service** | 52/53-week years, FY changes, mid-year IPOs — a shared library, not ad hoc SQL |
+
+Table format (Iceberg/Delta) helps **time travel and rebuilds**. It does not replace the `as_of` semantic; it just makes silver/gold reproducible.
+
+### 20.7 Search backend that matches how filings are written
+
+Chunk 10-K/10-Q by **item boundaries** (Item 1A, Item 7, Item 8 notes), then sliding windows inside the item. Hybrid retrieval: BM25 for rare phrases (“going concern,” a customer name) plus embeddings for paraphrase.
+
+Index metadata on every chunk: cik, accession, item, filed_at. AI retrieval must filter `filed_at <= as_of` the same way facts do.
+
+Do not embed a filing twice. Cache embeddings **per accession**.
+
+### 20.8 Ingest control plane upgrades
+
+Beyond a token bucket:
+
+- Per-source adapters with a shared **budget object** (rps, daily count, error budget)
+- Jittered backoff and a circuit breaker that **pages humans** instead of retrying into a block
+- Watermarks: “daily index for 2026-08-22 fully consumed”
+- Synthetic probes (one cheap, identified request) so you know a 403 is you vs EDGAR
+- Calendar-aware schedulers (do not poll BLS hourly)
+- Idempotent load keys: `(source, accession or series, content_hash)`
+
+`submissions.zip` is a batch-engineering problem (hundreds of thousands of JSON files). Stream-extract into object storage; do not unpack a 500k-file directory onto one disk.
+
+### 20.9 Compute plane for models, stats, and econometrics
+
+Enhancement is **isolation**, not a bigger API box:
+
+- Snapshot extracts (narrow, dated, hashed) into the job
+- Concurrency caps per user and global
+- Stored methodology: formula, universe, `as_of`, mapping version, data hash
+- Optional feature store later — only if you already have PIT joins
+
+The model engine should import **semantic metrics**, not raw tags.
+
+### 20.10 Human mapping operations (the unglamorous upgrade)
+
+The backend is incomplete without an internal tool:
+
+- Queue of unmapped extension tags, dual tags, identity failures
+- Suggested synonym (rules first, LLM second)
+- Approve → new mapping version → gold rebuild
+- Per-company “why this revenue tag won” debugger
+
+This is how mapping quality compounds. Without it, the resolver rots after the first FASB taxonomy update.
+
+### 20.11 Security and tenancy (1,500 users will include teams)
+
+- SSO (OIDC), SCIM if you sell to firms
+- Row-level isolation for theses, models, alerts
+- Audit log of who exported what
+- Source API keys never in the browser; rotate BEA/BLS/EIA/FRED keys
+- Separate job IAM from the public API role
+
+### 20.12 Suggested backend enhancement order
+
+1. Bi-temporal facts + `as_of` on every read path  
+2. Semantic metrics + mapping-as-code with golden tests  
+3. Event ingest (8-K items, Form 4, 13F) on the same control plane  
+4. Event-driven pack rebuild + fragment cache  
+5. Lineage / SLIs / replay from bronze  
+6. Item-chunked filing search  
+7. Linkbase-aware resolver + identity tests + mapping ops UI  
+8. Isolated compute snapshots for models and econometrics  
+
+Items 1–4 change product quality immediately. Items 5–8 are what keep you from being flagged, wrong, or slow once the user base is real.
+
