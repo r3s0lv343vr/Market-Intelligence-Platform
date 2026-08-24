@@ -1,4 +1,5 @@
 import { companies, driversByIndustry, facts, filings, MAPPING_VERSION, PACK_VERSION, sources } from "./fixtures";
+import { ingestStatus } from "./ingest/status";
 import { CONCEPTS, identityResidual, resolveConcept } from "./resolver";
 import { buildSignals } from "./signals";
 import type { CompanyPack, StatementLine } from "./types";
@@ -105,13 +106,16 @@ export function listSources() {
 }
 
 export function warehouseHealth() {
+  const ingest = ingestStatus();
   return {
-    mode: "fixture",
+    mode: "fixture" as const,
     liveUpstreamCalls: 0,
     companies: companies.length,
     facts: facts.length,
     packVersion: PACK_VERSION,
     mappingVersion: MAPPING_VERSION,
-    note: "User traffic hits this warehouse only. SEC/BLS/BEA are not called.",
+    identity: ingest.identity,
+    ingest,
+    note: "User traffic hits this warehouse only. SEC/BLS/BEA are not called from request handlers.",
   };
 }

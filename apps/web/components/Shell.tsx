@@ -6,7 +6,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
       <header className="border-b border-line bg-panel/80 backdrop-blur sticky top-0 z-20">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
           <Link href="/" className="font-semibold tracking-tight">
-            Market Intelligence
+            Trace Market Intelligence
           </Link>
           <nav className="flex items-center gap-4 text-sm text-mute">
             <Link href="/" className="hover:text-ink">

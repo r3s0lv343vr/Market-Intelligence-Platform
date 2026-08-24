@@ -12,7 +12,7 @@ export default async function Home({
   return (
     <div className="space-y-8">
       <section className="max-w-2xl">
-        <p className="text-xs uppercase tracking-wide text-mute">P0 warehouse · fixtures only</p>
+        <p className="text-xs uppercase tracking-wide text-mute">TraceMI/0.1 · P0 warehouse · fixtures only</p>
         <h1 className="mt-2 text-3xl font-semibold tracking-tight">
           Do not just see the numbers. Understand what is driving them.
         </h1>

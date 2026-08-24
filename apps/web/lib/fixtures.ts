@@ -222,11 +222,11 @@ export const sources: SourceRecord[] = [
     name: "SEC EDGAR (fixtures only)",
     role: "Company facts and filings",
     license: "Public filings; extracts are not a substitute for the filing",
-    updateCalendar: "Live ingest off — User-Agent required before bulk pulls",
+    updateCalendar: "Live ingest off — identity is set; bulk pulls stay gated",
     lastSuccess: "fixture load",
     status: "fixture",
     requestsToday: 0,
-    budgetNote: "0 live SEC requests. Budget 5–8 req/s when enabled.",
+    budgetNote: "0 live SEC requests. Cap 5 req/s (hard 8). 403/429 open a circuit with no retry.",
   },
   {
     id: "bls",

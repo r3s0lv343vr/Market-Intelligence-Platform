@@ -26,7 +26,7 @@ export function CompanyView({ pack }: { pack: CompanyPack }) {
           <span className="text-mute font-medium">{pack.company.ticker}</span>
         </h1>
         <p className="mt-2 text-sm text-mute">
-          Pack {pack.packVersion} · mapping {pack.mappingVersion} · shared for every user · zero
+          Pack {pack.packVersion} · mapping {pack.mappingVersion} · TraceMI shared pack · zero
           upstream API calls
         </p>
       </div>

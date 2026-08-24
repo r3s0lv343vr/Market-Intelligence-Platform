@@ -1,5 +1,7 @@
 # Market Intelligence Platform — AI Guide
 
+**Product:** Trace Market Intelligence. **Ingest identity:** `TraceMI/0.1 (Trace Market Intelligence; tracemarketintelligence@gmail.com)`. Live source calls stay off until an ingest job is explicitly enabled on a dedicated host.
+
 **Read this first** before writing code, designing a feature, or calling a government API.
 
 This guide collates the investigation, enhancement paths, project map, process map, and gated build plan into one instruction set for humans and coding agents.
@@ -74,7 +76,7 @@ If a request conflicts with these, follow the rules and say so.
 | Browser/client calling `data.sec.gov` | Product API → gold/packs |
 | Fetch companyfacts on cache miss in a user request | Pack rebuild from ingest |
 | Horizontal ingest across many IPs | One control plane, priority queues |
-| `python-requests/2.x` / generic User-Agent | `MarketIntel Platform contact@domain` |
+| `python-requests/2.x` / generic User-Agent | `TraceMI/0.1 (Trace Market Intelligence; tracemarketintelligence@gmail.com)` |
 | Recrawl all exhibits every night | Accession-level cache |
 | Immediate retry on 403/429 | Circuit breaker, page humans, replay bronze |
 | Scrape FRED HTML / train an LLM on FRED | Curated original-agency series + citations |

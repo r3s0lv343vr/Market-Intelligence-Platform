@@ -3,15 +3,45 @@ import { listSources, warehouseHealth } from "@/lib/warehouse";
 export default function AdminPage() {
   const health = warehouseHealth();
   const sources = listSources();
+  const id = health.identity;
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Data status</h1>
         <p className="mt-2 text-sm text-mute">
-          Source-governance view. Live ingest is off until a User-Agent identity is provided.
+          Source-governance view. Live ingest is off. This web process does not call EDGAR.
         </p>
       </div>
+
+      <section className="rounded-lg border border-line bg-panel p-4">
+        <h2 className="text-sm font-semibold">Ingest identity</h2>
+        <dl className="mt-3 grid gap-3 sm:grid-cols-2">
+          <div>
+            <dt className="text-xs text-mute">Platform</dt>
+            <dd className="mt-1 font-medium">{id.platformName}</dd>
+          </div>
+          <div>
+            <dt className="text-xs text-mute">Agent token</dt>
+            <dd className="mt-1 font-mono text-sm">{id.agentToken}</dd>
+          </div>
+          <div className="sm:col-span-2">
+            <dt className="text-xs text-mute">User-Agent (locked)</dt>
+            <dd className="mt-1 font-mono text-xs leading-5">{id.userAgent}</dd>
+          </div>
+          <div>
+            <dt className="text-xs text-mute">SEC budget</dt>
+            <dd className="mt-1 text-sm">
+              {id.secTargetRps} req/s target · {id.secHardCapRps} req/s hard cap
+            </dd>
+          </div>
+          <div>
+            <dt className="text-xs text-mute">Live ingest</dt>
+            <dd className="mt-1 text-sm">{health.ingest.liveEnabled ? "enabled" : "disabled"}</dd>
+          </div>
+        </dl>
+        <p className="mt-3 text-xs text-mute">{health.ingest.flagCaution}</p>
+      </section>
 
       <dl className="grid gap-3 sm:grid-cols-3">
         <div className="rounded-lg border border-line bg-panel p-3">
