@@ -10,7 +10,7 @@ This guide collates the investigation, enhancement paths, project map, process m
 | --- | --- |
 | Why these constraints exist | [MARKET_INTELLIGENCE_PLATFORM_INVESTIGATION.md](./MARKET_INTELLIGENCE_PLATFORM_INVESTIGATION.md) |
 | Workstreams, processes, phase work packages | [BUILD_PLAN.md](./BUILD_PLAN.md) |
-| What we kept vs adopted from the product/backend briefs | [MARKET_INTELLIGENCE_PLATFORM_INVESTIGATION.md](./MARKET_INTELLIGENCE_PLATFORM_INVESTIGATION.md) §21 |
+| Intelligence core (Lattice) decisions | [INTELLIGENCE_CORE_DECISIONS.md](./INTELLIGENCE_CORE_DECISIONS.md) — **deferred until the end of this gated build**; do not implement in P0–P4 |
 
 This product is **not investment advice**. Extracts are not a substitute for the filing. Rate limits and terms change; re-verify official pages before production.
 

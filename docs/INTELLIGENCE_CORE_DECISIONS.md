@@ -1,9 +1,9 @@
 # Trace Market Intelligence — Intelligence Core Decisions
 
-**Status:** Decision document. Nothing in this file is approved for build.  
+**Status:** Deferred until the end of the current gated build (P0–P5 / Version 1). Not approved. Do not implement in P0–P4.  
 **Product:** Trace Market Intelligence (`TraceMI/0.1`)  
 **Date:** 24 August 2026  
-**Related:** Lattice Engine exploratory brief; current P0–P5 plan in `docs/AI_GUIDE.md`
+**Decision recorded:** 24 August 2026 — leave this document until the build is complete; then mark items individually.
 
 This document compiles the proposed intelligence-core enhancements for **individual** accept or reject. It is not a build plan and does not change the running fixture app.
 
