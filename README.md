@@ -15,14 +15,9 @@ Open http://localhost:3000 — search NSM, HBT, or LATT.
 
 ## Vercel
 
-Project root for Vercel: **`apps/web`**.
+The fixture app is the Vercel project **`market-intelligence-platform`**. Root Directory is **`apps/web`**. No environment variables are required.
 
-Connect this GitHub repo in the Vercel dashboard and set Root Directory to `apps/web`. No environment variables are required for the fixture deployment.
-
-```bash
-cd apps/web
-npx vercel --yes
-```
+Git auto-deploy needs the [Vercel GitHub app](https://github.com/apps/vercel) installed on this repo. Until then, production deploys are CLI uploads of this branch.
 
 ## Docs
 
