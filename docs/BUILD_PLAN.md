@@ -6,19 +6,21 @@ Agents and implementers should start with the collated [AI_GUIDE.md](./AI_GUIDE.
 
 It does not estimate calendar duration. Difficulty is described by what must exist, what it depends on, and what breaks if you skip it.
 
-**North star:** users never hit source APIs. They query a warehouse of comparable, sourced facts. A single identified ingest plane pulls government/public data without being flagged.
+**North star:** collect once → normalize → store → calculate → cache → serve many. Users never hit source APIs.
+
+**Product journey:** `COMPANY → CHANGE → EXPLANATION → EVIDENCE → CONNECTIONS`
 
 ```text
-Sources → ingest plane → bronze → silver → gold → product APIs
-                                              ↓
-                                    users decide (never call SEC)
+Sources → ingest → bronze → silver → gold → intelligence → cache → API
+                                                                    ↓
+                                                          many users (never call SEC)
 ```
 
 ---
 
 ## 1. Project map
 
-The project is eight parallel workstreams that only *appear* sequential. Most later streams attach to the gold spine; they must not start until that spine exists.
+The project is nine workstreams that only *appear* sequential. Most later streams attach to the gold spine; they must not start until that spine exists.
 
 ### 1.1 Workstreams
 
@@ -35,8 +37,11 @@ flowchart TB
   D --> G[G Ops — SLIs, mapping queue]
   A --> G
   E --> F[F Product — UI, alerts, export]
+  D --> I[I Intelligence — signals, drivers, precompute]
+  I --> E
   F --> H[H Extensions — events, models, AI, econometrics]
   D --> H
+  I --> H
 ```
 
 | ID | Workstream | Owns | Must not own |
@@ -50,6 +55,7 @@ flowchart TB
 | F | Product | Company workspace, screener, watchlists, export | Mapping rules |
 | G | Ops | Data status, SLIs, mapping queue, source health | End-user research UX |
 | H | Extensions | Events, models, AI, stats lab, econometrics | New ingest identities / extra IPs |
+| I | Intelligence | Signals, precompute, driver map, explainable flags | Opaque scores; LLM arithmetic |
 
 ### 1.2 Phase map (capability layers)
 
@@ -362,27 +368,28 @@ Each phase lists **work packages**, **acceptance**, and **explicit non-goals**. 
 
 ### Phase 1 — Intelligence
 
-**Outcome:** a user can go from “this sector looks weak” to a shortlist, with sources.
+**Outcome:** change-first company research: what changed, is it unusual, why might it be, what to inspect. A wide screener comes **after** this works on a 2–3 industry demo.
 
 | WP | Work | Depends on |
 | --- | --- | --- |
-| 1.1 | Materialized company packs (latest statements + meta) | P0 |
-| 1.2 | Peer sets (rule + manual override) | 1.1 |
-| 1.3 | TTM where constructible; peer ranks / simple z-scores | 1.2 |
-| 1.4 | Screener on gold columns + saved views + row cap + CSV export | 1.3 |
-| 1.5 | Sector page: cohort medians + 3–5 paired macro series | 0.4, 1.3 |
-| 1.6 | Watchlists | 1.1 |
-| 1.7 | Filing alerts from **your** index (10-K/10-Q/8-K arrived) | 0.3, 1.6 |
-| 1.8 | Fiscal calendar service (FY end, 53-week, period keys) | 1.3 |
+| 1.1 | Shared packs + fiscal calendar | P0 |
+| 1.2 | Deterministic metrics (YoY, QoQ, TTM, margins, FCF, leverage, conversion, inventory/receivables vs revenue) | 1.1 |
+| 1.3 | Explainable signal engine (10–20 rules on the demo universe first) | 1.2 |
+| 1.4 | Peer engine: industry + size + geo start; user-selected override; medians/ranks/divergence | 1.3 |
+| 1.5 | Curated driver map per sector (plausible vs mere correlation) | 0.4, 1.3 |
+| 1.6 | Change-first company page + evidence drill-down + filing diffs | 1.3–1.5 |
+| 1.7 | Watchlists + alerts from **your** index | 1.1 |
+| 1.8 | Scanner on gold signals (only after 1.6 is excellent on the demo set) | 1.3, 1.6 |
 
 **P1 gate**
 
-- Screen of Tier A returns in interactive time from **gold**, not raw facts
-- Overlay series have citations and stored copyright/source class
-- Alert on a new 10-Q does not fetch EDGAR in the request path
-- Export includes provenance columns
+- Every flag opens to formula, periods, and source facts (Observed vs Calculated labeled)
+- Drivers are a curated sector list, not a dump of thirty series
+- Two users share one pack; new 10-Q precomputes signals (not on page view)
+- Alert path does not fetch EDGAR
+- SIC-only peers can be overridden
 
-**P1 non-goals:** DCF, chat, 13F, as-of toggle (design it; ship in P2).
+**P1 non-goals:** DCF, generic chat, 13F, full graph, portfolio, as-of toggle (design it; ship in P2).
 
 ### Phase 2 — Events and memory
 
@@ -492,13 +499,14 @@ Each phase lists **work packages**, **acceptance**, and **explicit non-goals**. 
 
 If only one slice is built, it is this — not a chatbot, not a modeler:
 
-1. Ingest plane + SEC bulk + index diff  
-2. Entity + corporate resolver + provenance  
-3. Company page + filing list  
-4. Admin budgets / 403s  
-5. Then immediately: packs + screener + one sector overlay  
+1. Ingest plane + SEC bulk + index diff + source-governance registry  
+2. Entity + corporate resolver (YTD vs quarterly, confidence, dimensions)  
+3. Demo universe: **two or three industries**, several years of filings  
+4. 10–20 intelligence rules + change-first page + evidence drill-down  
+5. Credible peers + curated drivers per industry  
+6. Admin budgets / 403s + shared packs  
 
-That slice proves the architecture. Everything on the project map hangs off it.
+Then scanner, then tool-using AI, then events/graph/portfolio. A wide shallow universe does not prove the product.
 
 ---
 
@@ -525,4 +533,4 @@ One person can start P0. Mapping quality and filing-season ops do not stay a sid
 - **Build plan (§3)** — the gated sequence and the work inside each gate.  
 - **Investigation** — why these constraints exist (rate limits, XBRL, FRED, scale).
 
-When a feature is proposed, place it on the phase map. If it needs AI, models, or econometrics and P0–P2 are not green, it is out of order.
+When a feature is proposed, run the feature filter in [AI_GUIDE.md](./AI_GUIDE.md) §16, then place it on the phase map. AI belongs after P1 tools exist. Econometrics belongs after `as_of`.

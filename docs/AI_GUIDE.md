@@ -8,6 +8,7 @@ This guide collates the investigation, enhancement paths, project map, process m
 | --- | --- |
 | Why these constraints exist | [MARKET_INTELLIGENCE_PLATFORM_INVESTIGATION.md](./MARKET_INTELLIGENCE_PLATFORM_INVESTIGATION.md) |
 | Workstreams, processes, phase work packages | [BUILD_PLAN.md](./BUILD_PLAN.md) |
+| What we kept vs adopted from the product/backend briefs | [MARKET_INTELLIGENCE_PLATFORM_INVESTIGATION.md](./MARKET_INTELLIGENCE_PLATFORM_INVESTIGATION.md) §21 |
 
 This product is **not investment advice**. Extracts are not a substitute for the filing. Rate limits and terms change; re-verify official pages before production.
 
@@ -15,22 +16,33 @@ This product is **not investment advice**. Extracts are not a substitute for the
 
 ## 1. What you are building
 
-A market-intelligence platform that compiles **government and public data** so users can decide:
+An AI-powered **research** platform: company financials + SEC filings + economic data, assembled so a user can see **what changed, why it may be happening, who else is affected, and what evidence to inspect**. The shortest promise: do not just show the numbers; explain what is driving them.
 
-- How is this company doing versus its history and a defensible peer set?
-- What changed in the latest 10-Q / 10-K — company-specific or macro?
-- Which names in a sector show margin, leverage, or cash-conversion stress?
-- How do rates, labor, inflation, energy, or fiscal conditions change the backdrop?
-- What does a simple model imply if I change growth, margin, or WACC?
+The product is **joins across sources that were never designed to be joined** — not a filing dump, not a quote app, and not a Bloomberg clone.
 
-The product is **joins across sources that were never designed to be joined** — not a filing dump and not a Bloomberg clone.
-
-**North star**
+**User journey (governs V1 scope)**
 
 ```text
-Sources → ingest plane → bronze → silver → gold → product APIs
-                                              ↓
-                                    users decide (never call SEC)
+COMPANY → CHANGE → EXPLANATION → EVIDENCE → CONNECTIONS
+```
+
+A feature belongs in Version 1 only if it materially improves one of those steps. See §16.
+
+**Three layers (do not confuse them)**
+
+| Layer | What it is | What it is not |
+| --- | --- | --- |
+| 1 Data infrastructure | Ingest, bronze/silver/gold, provenance | The product users pay for |
+| 2 Intelligence engine | Signals, peers, anomalies, curated drivers, relationships | Raw ratios dumped on a page |
+| 3 Research experience | Change-first company page, filings, peers, drivers, scanner, tool-using AI | A generic chatbot or terminal of tables |
+
+**Backend principle**
+
+```text
+Collect once → normalize → store → calculate → cache → serve many
+Sources → ingest → bronze → silver → gold → intelligence → cache → API
+                                                                    ↓
+                                                          many users (never call SEC)
 ```
 
 ---
@@ -46,12 +58,14 @@ If a request conflicts with these, follow the rules and say so.
 5. **Cache by accession.** A disseminated filing does not change. Do not refetch because a user reloaded a page.
 6. **Bronze is immutable.** Fixes are a new mapping version + rebuild from silver. Never “fix” a bad zip by crawling HTML.
 7. **Missing is missing.** Never coerce a gap to zero. Banks without a bank template are unmapped, not fake “revenue.”
-8. **Provenance on every served number.** Tag, accession, form, filed-at, as-filed vs restated, mapping version.
-9. **Numbers in AI answers come from gold tools only.** If the model cannot cite a stored fact, it refuses the figure. Do not train on FRED content.
+8. **Provenance on every served number.** Tag, accession, form, filed-at, as-filed vs restated, mapping version, **mapping confidence**. Never visually conflate **observed fact**, **calculated measure**, **model output**, and **interpretation**.
+9. **Deterministic math in code.** LLMs must not compute YoY, TTM, FCF, or ranks. AI synthesizes an **evidence package** the backend already built. If the model cannot cite a stored fact, it refuses the figure. Do not train on FRED content.
 10. **No extra source calls to look busy.** No polling BLS/BEA every few minutes. Honor release calendars.
 11. **Do not start P4/P5 to look advanced.** Chat, econometrics, and buy/sell signals amplify wrong mapping.
 12. **This is not an advice engine.** No autonomous “buy/sell.” Modeling tools are fine; recommendations are a compliance change.
 13. **Design serving for a large audience.** 1,500 users is an early cohort, not the ceiling. Shared packs, quotas, and a partitioned user store from P0. User growth never changes ingest.
+14. **Source-governance registry.** Every connector has keys, limits, attribution, license class, and update calendar. Do not assume identical commercial-use or redistribution rights.
+15. **Precompute on arrival, not on page view.** New 10-Q → parse → normalize → metrics → signals → peers → cache. Thousands of users read the result.
 
 ### Behaviors that get the platform flagged
 
@@ -78,7 +92,18 @@ If a request conflicts with these, follow the rules and say so.
 | **Census** | Key recommended | 500 queries/IP/day without key | Industry / geo context |
 | **EIA** | Required key | Throttle; temp key suspend; ~5k rows/call | Energy overlay |
 | **FDIC / FFIEC** | Public APIs or bulk | Agency-specific | Banks |
+| **Fed / NY Fed** | Original publications (H.15, NY Fed markets) preferred over a FRED mirror | Agency-specific; still one ingest identity | Rates, credit, funding (MVP driver layer) |
 | **FRED** | Small curated overlay only if needed | ~120 req/min typical; **no AI/ML training**; no FRED-clone UX; per-series copyright | Convenience — prefer original agencies |
+
+**Source tiers (do not ingest the world in P0)**
+
+| Tier | Sources | When |
+| --- | --- | --- |
+| MVP | SEC, BLS, BEA, EIA, Census, Fed/NY Fed, Treasury (rates/fiscal as needed) | P0–P1 |
+| Phase 2 | FINRA, FDIC, USAspending, remaining Treasury | After company workflow is trusted |
+| Phase 3 | World Bank, IMF, OECD, ECB | After US coverage is boring |
+| Specialized | USPTO, sector government sets | Vertical need |
+| Licensed later | Prices, consensus, transcripts, premium news | Contract signed |
 
 **Pairing (product concept, not an afterthought)**
 
@@ -126,6 +151,9 @@ Every read path eventually accepts `as_of`. Latest-restated vs as-of-T is a prod
 
 - Canonical concepts (`revenue`, `operating_income`, `net_income`, `total_assets`, `total_debt`, `cfo`, `capex`, …)
 - Ordered synonym sets; a tag **only wins if it has an observation for that period** (stale 2010 `Revenues` must not answer FY2025)
+- Distinguish **duration quarterly vs YTD vs annual**; do not mix them in YoY/TTM without a rule
+- Preserve XBRL **dimensions** (segments, geo) on the fact; do not drop them at ingest
+- Store `mapping_confidence` and `transformation_version` on every gold line
 - Industry templates: corporate vs bank vs insurer vs REIT vs utility
 - Provenance: tag, accession, form, filed-at, direct vs derived
 - Dual-tagged revenue: dedupe, do not double-count
@@ -264,7 +292,7 @@ Do not estimate calendar time. A phase is **done** only when its gate is true. Y
 | 0.1 | Monorepo, CI, secrets, logs, deploy skeleton |
 | 0.2 | Ingest plane: identity, token bucket, backoff, watermarks, bronze writer |
 | 0.3 | SEC: stream-extract nightly zips; daily index diff |
-| 0.4 | Macro: ~30 series from Treasury / BLS / BEA (not a FRED mirror) |
+| 0.4 | Source-governance registry + ~30 series from BLS / BEA / EIA / Census / Fed–NY Fed / Treasury (not a FRED mirror) |
 | 0.5 | Entity: CIK, tickers, names, SIC, tiers A/B/C |
 | 0.6 | Silver `sec_fact` / `sec_submission` with `filed_at`, units, accession |
 | 0.7 | Corporate resolver, period-scoped synonyms, provenance |
@@ -273,17 +301,31 @@ Do not estimate calendar time. A phase is **done** only when its gate is true. Y
 | 0.10 | Golden tests on 10–20 known 10-Ks (clean + messy) |
 | 0.11 | Versioned shared company pack + API rate limits (two users, one pack) |
 
-**Gate:** reload = **zero** source calls; number shows tag/accession/form/filed-at; bronze replay is idempotent; SEC < 8 req/s; banks show unmapped, not fake revenue.
+**Gate:** reload = **zero** source calls; two users share one pack; number shows tag/accession/form/filed-at; bronze replay is idempotent; SEC < 8 req/s; banks show unmapped, not fake revenue.
 
 **Non-goals:** screener, AI, models, Form 4, prices.
 
-### P1 — Intelligence
+### P1 — Intelligence (the product layer)
 
-Packs, peer sets, TTM/ranks, screener + row cap + CSV, sector + macro overlay, watchlists, alerts from **your** index, fiscal calendar service.
+This is Version 1’s intellectual property — not a ratio dump.
 
-**Gate:** screens hit gold not raw facts; overlays cited; alerts do not fetch EDGAR on the request path; export includes provenance.
+| WP | Work |
+| --- | --- |
+| 1.1 | Shared company packs + fiscal calendar |
+| 1.2 | Deterministic metrics: YoY, QoQ, TTM, margins, FCF, leverage, liquidity, net debt, coverage, cash conversion, inventory/receivables vs revenue |
+| 1.3 | **Signal engine** (explainable): acceleration, margin deterioration, inventory/receivables divergence, weak conversion, leverage, peer out/underperformance. Each signal links to formula + periods + facts |
+| 1.4 | Peer engine: industry + size + geo as start; **user-override** peer set; ranks, medians, divergence. SIC alone is not a valid peer set |
+| 1.5 | **Driver map:** curated sector → economically *plausible* variables (e.g. autos: vehicle demand, auto credit, wages, industrial production). Label correlation vs plausible mechanism |
+| 1.6 | Change-first company page: Key developments → is it unusual? → why might it be? → what to inspect. Evidence drill-down |
+| 1.7 | Filing intelligence: structured financial diffs + material disclosure language changes (not full-document AI) |
+| 1.8 | Watchlists + alerts from **your** index |
+| 1.9 | First **scanner** only after 1.3–1.6 work on the demo universe |
 
-**Non-goals:** DCF, chat, 13F (design `as_of`; ship in P2).
+**First demonstration (before a wide universe):** two or three industries, several years of SEC + a handful of drivers, **10–20 high-quality intelligence rules**, credible peers, evidence-linked retrieval. Prove a user understands a company faster. Do not ship a huge universe with shallow flags.
+
+**Gate:** every flag opens to calculation + source; drivers are sector-curated not a dump of 30 series; two users share one pack; screens (when on) hit gold.
+
+**Non-goals:** DCF, generic chat, 13F, full knowledge graph, portfolio, scenarios (design `as_of`; ship in P2).
 
 ### P2 — Events and memory
 
@@ -299,41 +341,49 @@ Semantic metrics used by API and jobs; identity/dual-tag flags; corporate annual
 
 **Non-goals:** Monte Carlo, LBO, chat, Stata-like lab.
 
-### P4 — AI / research
+### P4 — AI analyst (tool operator, not a chatbot)
 
-Filing text stored once per accession; item-boundary chunks; hybrid search; tool-calling into gold; “what changed” = structured diff + cited chunks; mapping *suggestions* only; token budgets.
+Allowed only after P1 signals, peers, drivers, and evidence packages exist.
 
-**Gate:** no unsourced dollar figures; retrieval respects `as_of`; no FRED training; same 10-K is not re-embedded.
+Filing text stored once per accession; item-boundary chunks; hybrid search (Postgres + pgvector is enough at first); tool-calling into gold; “what changed” = **precomputed signal/diff** + cited chunks; mapping *suggestions* only; token budgets via selective retrieval.
 
-**Non-goals:** autonomous recommendations; training a market LLM.
+Tools the AI may call: active signals, peer panel, driver map, scanner AST, filing passages. It does not invent flags.
+
+**Gate:** no unsourced dollar figures; retrieval respects `as_of`; no FRED training; same 10-K is not re-embedded; every synthesis cites the evidence package.
+
+**Non-goals:** autonomous recommendations; training a market LLM; AI as the hero above unsigned numbers.
 
 ### P5 — Econometrics, teams, commercial data
 
 Snapshot OLS/panel + methodology; vintage macro policy; SSO/RLS/export audit; gold metric API; licensed prices **only if contracted**.
 
-**Gate:** a panel job cannot exhaust the API box; results show N, `as_of`, mapping version, hash; no cross-tenant leaks.
+**Gate:** a panel job cannot exhaust the API box; results show N, `as_of`, mapping version, hash; no cross-tenant leaks; quotas hold when the audience is large.
 
 ---
 
 ## 8. First slice (smallest product that is still the product)
 
-If you implement only one slice:
+1. Ingest plane + SEC bulk + index diff + source-governance registry  
+2. Entity + corporate resolver (YTD vs quarterly, confidence, dimensions)  
+3. **Demo universe:** 2–3 industries, several years of filings  
+4. 10–20 intelligence rules + change-first company page + evidence drill-down  
+5. Credible peers + a small curated driver map per industry  
+6. Admin budgets / 403s + shared packs  
 
-1. Ingest plane + SEC bulk + index diff  
-2. Entity + corporate resolver + provenance  
-3. Company page + filing list  
-4. Admin budgets / 403s  
-5. Then immediately: packs + screener + one sector overlay  
+Then: scanner, then constrained AI tools, then events/graph/portfolio.
 
-Not a chatbot. Not a modeler.
+Not a chatbot. Not a modeler. Not a 10,000-name screen with empty signals.
 
 ---
 
 ## 9. UI rules
 
-- Professional research tool: density, tabular figures, compare-by-default.
-- Persistent company shell: ticker, period, as-filed/restated; panes for overview, statements, filings, peers, overlay, (later) events/model.
-- Provenance visible on hover.
+- **Change-first**, not ratio-first. Sequence: what changed → is it unusual → why might it be → what to inspect.
+- Tabs: Overview | Financials | Filings | Peers | Drivers | Relationships (relationships can be thin in V1).
+- Clicking a flag or “score” reveals metrics, methodology, period, and evidence. No black-box grades.
+- Trust chrome on every claim: Observed / Calculated / Model / Interpretation.
+- Store observations and chart **definitions**; render in the client (ECharts is a suitable default). Do not store chart images.
+- Persistent company shell: ticker, period, as-filed/restated.
 - Honest gaps: `unmapped`, `bank template required`, `copyright-restricted`.
 - Keyboard jump-to-ticker; copy/export to Excel.
 - Desktop-first for screen/model; mobile = watchlist, alerts, overview.
@@ -405,15 +455,91 @@ Do not treat this as P0 scope.
 - [ ] For AI: can every dollar be traced to a tool result?
 - [ ] Would this feature work if EDGAR returned 403 for an hour? (last-good packs)
 - [ ] If 10× more users opened this page at once, would they share a pack — or multiply source/DB work?
+- [ ] Is the claim labeled Observed / Calculated / Model / Interpretation?
+- [ ] Does this feature improve COMPANY → CHANGE → EXPLANATION → EVIDENCE → CONNECTIONS?
 
 ---
 
-## 15. How to use this guide
+## 16. Feature decision filter
 
-1. Place the requested feature on a **phase**. If it needs AI, models, or econometrics and P0–P2 are not green, it is out of order.  
-2. Implement in the **workstream that owns it** (ingest vs serving vs resolver).  
-3. Follow the **process map**; do not invent a live-proxy shortcut.  
-4. Pass the **phase gate** and **§14 checklist**.  
-5. Deep-dive only as needed: investigation for source/legal detail; build plan for full WP tables.
+Before adding an API, dataset, model, or UI module, all of these should be mostly yes:
+
+1. Does it help identify **what changed**?
+2. Does it help decide whether the change is **unusual**?
+3. Does it help explain a **plausible driver** (not a random correlation)?
+4. Does it provide **better evidence**?
+5. Does it reveal **related** companies, risks, or opportunities?
+6. Can it be maintained **legally and operationally**?
+7. Will users understand the result **without knowing the upstream API**?
+
+If most answers are no, it does not belong in the current build.
+
+**Version 1 is complete when** a user can search a U.S. public company, see normalized history, understand the most material recent changes, compare them with credible peers, inspect a small curated driver set, ask a **tool-using** AI follow-up, and trace every important answer to evidence.
+
+Defer until that works: global expansion, patents, government contracts, full knowledge graphs, portfolio/scenario products, real-time prices, premium datasets.
+
+---
+
+## 17. Internal API (frontend talks only to this)
+
+REST is enough for V1 (resources are obvious). Add GraphQL later only if the company workspace over-fetches.
+
+| Area | Purpose |
+| --- | --- |
+| `GET /search/companies` | Ticker / name / CIK |
+| `GET /companies/{id}/overview` | Pack: flags, health, period |
+| `GET /companies/{id}/financials` | Canonical statements + provenance |
+| `GET /companies/{id}/signals` | Explainable intelligence |
+| `GET /companies/{id}/filings` | List + diffs |
+| `GET /companies/{id}/peers` | Comparison panel |
+| `GET /companies/{id}/drivers` | Curated economic variables |
+| `GET /companies/{id}/relationships` | Effective-dated edges (thin in V1) |
+| `GET /companies/{id}/evidence/{id}` | Source chain |
+| `POST /scanner/query` | Structured filters (NL → AST is P4) |
+| `POST /ai/research` | Job: tools + evidence package (P4) |
+| `GET /meta/sources` | Governance: freshness, license, attribution |
+
+---
+
+## 18. Initial stack (do not buy a warehouse prematurely)
+
+| Layer | V1 default | Add later when needed |
+| --- | --- | --- |
+| API | One service language (TS or Python) | Split only ingest vs API |
+| OLTP | PostgreSQL (entities, facts, signals, users, edges) | Read replicas |
+| Search/AI | Postgres + pgvector | Dedicated search when filing QPS hurts |
+| OLAP | Postgres or Parquet jobs | ClickHouse/BigQuery when screens need it |
+| Raw | S3-compatible (S3 or R2) | — |
+| Cache | Redis + CDN for packs | Edge more regions |
+| Jobs | Queue + schedulers | Autoscale **workers**, not SEC IPs |
+| Charts | ECharts on stored observations | Financial chart lib if prices arrive |
+
+Relationship graph: **Postgres edges first** (source, confidence, effective dates, evidence). Neo4j only after query volume proves it.
+
+---
+
+## 19. Cost shape (directional, not a quote)
+
+Infrastructure (public data only — not licensed market data):
+
+| Stage | What you are paying for |
+| --- | --- |
+| Prototype | One region, small universe, object storage + one Postgres + Redis + a worker |
+| MVP | Same shape; more storage for filings; still no ClickHouse required |
+| 10k MAU | Cache/CDN and Postgres I/O; job minutes if models/AI are on |
+| 100k MAU | Replicas, edge packs, quota enforcement; **LLM and export** dominate if unbounded |
+
+User growth should spend money on **your** API, cache, and DB — never on extra SEC call volume. Separate any future vendor quotes (prices, consensus) from this infra bill.
+
+---
+
+## 20. How to use this guide
+
+1. Run the **§16 filter**.  
+2. Place the feature on a **phase**. AI belongs after P1 tools exist; econometrics after `as_of`.  
+3. Implement in the **workstream that owns it**.  
+4. Follow the **process map**; no live-proxy shortcuts.  
+5. Pass the **phase gate** and **§14 checklist**.  
+6. Deep-dive: investigation for source/legal; build plan for full WP tables.
 
 If you are unsure, prefer **fewer source calls, more provenance, and an honest gap** over a complete-looking table.

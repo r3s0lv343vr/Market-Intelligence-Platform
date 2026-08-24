@@ -1090,3 +1090,31 @@ This is how mapping quality compounds. Without it, the resolver rots after the f
 Items 1–4 change product quality immediately. Items 5–8 are what keep you from being flagged, wrong, or slow once the user base is real.
 
 The sequenced project map, process map, and build plan are in [BUILD_PLAN.md](./BUILD_PLAN.md). The collated implementer / AI instruction set is [AI_GUIDE.md](./AI_GUIDE.md).
+
+---
+
+## 21. Alignment with the product / backend briefs
+
+An internal product definition and backend investigation brief were compared to this plan. **Those files were not modified.** Where the briefs were stronger on product, this repo adopted the change. Where this plan was stronger on ingest, legal, point-in-time, and serving, it was kept.
+
+**Kept (this plan remains the rule)**
+
+- Users never hit upstream APIs; one ingest identity; bulk-first SEC; no IP fan-out
+- FRED is not a training corpus and not a wholesale mirror
+- Bi-temporal `as_of` before models, stats, AI, and econometrics
+- Mapping-as-code, identity tests, missing ≠ zero, bank templates
+- Large-audience serving via shared packs and quotas
+- AI after deterministic tools exist; no LLM arithmetic
+
+**Adopted from the briefs**
+
+- Journey: COMPANY → CHANGE → EXPLANATION → EVIDENCE → CONNECTIONS
+- Layer 2 intelligence engine (explainable signals, precompute on filing arrival)
+- Trust labels: Observed / Calculated / Model / Interpretation
+- Curated sector driver maps (plausible mechanism vs correlation)
+- Source-governance registry and source tiers (MVP vs later)
+- Resolver: YTD vs quarterly, dimensions, mapping confidence
+- First demo: 2–3 industries, 10–20 rules — not a huge shallow universe
+- Postgres + object storage + Redis + pgvector first; graph DB and ClickHouse only when needed
+- Version 1 complete when change + peers + drivers + tool-using AI + evidence all work
+- Feature filter before new APIs or UI modules
