@@ -1,16 +1,30 @@
 # Market Intelligence Platform
 
-Investigation of what it would take to build a market-intelligence product on government and public data — especially SEC company financials — without unnecessary API calls or source flagging.
+P0 research UI on a **fixture warehouse**. The app does not call SEC, BLS, BEA, or other upstream APIs.
 
-Investigation, enhancements, and the gated build plan (project map, process map, phase work packages):
+## Run locally
 
-- **[docs/MARKET_INTELLIGENCE_PLATFORM_INVESTIGATION.md](docs/MARKET_INTELLIGENCE_PLATFORM_INVESTIGATION.md)** — requirements and architecture
-- **[docs/BUILD_PLAN.md](docs/BUILD_PLAN.md)** — project map, process map, and build sequence
+```bash
+cd apps/web
+npm install
+npm test
+npm run dev
+```
 
-## Core design rule
+Open http://localhost:3000 — search NSM, HBT, or LATT.
 
-User traffic never hits source APIs. Users query a warehouse. A single identified, rate-limited ingest plane pulls from SEC bulk files and other agency sources on their own calendars.
+## Vercel
 
-## Status
+The fixture app is the Vercel project **`market-intelligence-platform`**. Root Directory is **`apps/web`**. No environment variables are required.
 
-Research and architecture investigation only. No application code yet.
+Git auto-deploy needs the [Vercel GitHub app](https://github.com/apps/vercel) installed on this repo. Until then, production deploys are CLI uploads of this branch.
+
+## Docs
+
+- [docs/AI_GUIDE.md](docs/AI_GUIDE.md) — implementer rules
+- [docs/BUILD_PLAN.md](docs/BUILD_PLAN.md) — maps and gates
+- [docs/MARKET_INTELLIGENCE_PLATFORM_INVESTIGATION.md](docs/MARKET_INTELLIGENCE_PLATFORM_INVESTIGATION.md) — architecture
+
+## Design rule
+
+User traffic never hits source APIs. Live ingest stays off until a User-Agent identity is provided.

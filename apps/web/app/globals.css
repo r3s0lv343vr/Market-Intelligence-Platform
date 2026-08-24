@@ -1,0 +1,35 @@
+@import "tailwindcss";
+
+:root {
+  --background: #0c0e12;
+  --foreground: #e8e6df;
+  --panel: #141821;
+  --line: #2a3140;
+  --mute: #9aa3b2;
+  --pos: #7dcea0;
+  --neg: #e07a7a;
+  --warn: #d4b45a;
+}
+
+@theme inline {
+  --color-bg: var(--background);
+  --color-ink: var(--foreground);
+  --color-panel: var(--panel);
+  --color-line: var(--line);
+  --color-mute: var(--mute);
+  --color-pos: var(--pos);
+  --color-neg: var(--neg);
+  --color-warn: var(--warn);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}

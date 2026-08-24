@@ -2,21 +2,25 @@
 
 This is the build plan for the platform described in [MARKET_INTELLIGENCE_PLATFORM_INVESTIGATION.md](./MARKET_INTELLIGENCE_PLATFORM_INVESTIGATION.md). It includes the **project map** (what is built, in what order, with what dependencies), the **process map** (how work and data move), and the **build sequence** (what “done” means at each gate).
 
+Agents and implementers should start with the collated [AI_GUIDE.md](./AI_GUIDE.md).
+
 It does not estimate calendar duration. Difficulty is described by what must exist, what it depends on, and what breaks if you skip it.
 
-**North star:** users never hit source APIs. They query a warehouse of comparable, sourced facts. A single identified ingest plane pulls government/public data without being flagged.
+**North star:** collect once → normalize → store → calculate → cache → serve many. Users never hit source APIs.
+
+**Product journey:** `COMPANY → CHANGE → EXPLANATION → EVIDENCE → CONNECTIONS`
 
 ```text
-Sources → ingest plane → bronze → silver → gold → product APIs
-                                              ↓
-                                    users decide (never call SEC)
+Sources → ingest → bronze → silver → gold → intelligence → cache → API
+                                                                    ↓
+                                                          many users (never call SEC)
 ```
 
 ---
 
 ## 1. Project map
 
-The project is eight parallel workstreams that only *appear* sequential. Most later streams attach to the gold spine; they must not start until that spine exists.
+The project is nine workstreams that only *appear* sequential. Most later streams attach to the gold spine; they must not start until that spine exists.
 
 ### 1.1 Workstreams
 
@@ -33,8 +37,11 @@ flowchart TB
   D --> G[G Ops — SLIs, mapping queue]
   A --> G
   E --> F[F Product — UI, alerts, export]
+  D --> I[I Intelligence — signals, drivers, precompute]
+  I --> E
   F --> H[H Extensions — events, models, AI, econometrics]
   D --> H
+  I --> H
 ```
 
 | ID | Workstream | Owns | Must not own |
@@ -48,6 +55,7 @@ flowchart TB
 | F | Product | Company workspace, screener, watchlists, export | Mapping rules |
 | G | Ops | Data status, SLIs, mapping queue, source health | End-user research UX |
 | H | Extensions | Events, models, AI, stats lab, econometrics | New ingest identities / extra IPs |
+| I | Intelligence | Signals, precompute, driver map, explainable flags | Opaque scores; LLM arithmetic |
 
 ### 1.2 Phase map (capability layers)
 
@@ -147,7 +155,7 @@ If the resolver is weak, the screener, models, and AI are all confidently wrong.
     └── BUILD_PLAN.md
 ```
 
-A modular monolith (one deployable API + ingest workers + web) is enough through P2. Split ingest from serving at P0 so a mapping rebuild cannot take down company pages.
+Ingest + resolver may stay a modular monolith. Serving must be cache-first and horizontally scalable from P0: the audience is far larger than an early cohort. Split ingest from serving so a mapping rebuild cannot take down company pages. Never scale ingest by adding IPs.
 
 ---
 
@@ -261,25 +269,29 @@ flowchart LR
 
 If a view cannot end in watch, model, note, or export, it is a database browser.
 
-### 2.5 Read path vs write path (1,500 users)
+### 2.5 Read path vs write path (large audience)
+
+User growth hits the **read and job planes only**. Ingest stays one identity.
 
 ```mermaid
 flowchart TB
-  U[Users] --> API[API replicas]
-  API --> CACHE[Pack / fragment / screen cache]
-  CACHE --> PG[(Postgres packs / users)]
+  U[Large user base] --> GW[API gateway / WAF / quotas]
+  GW --> API[Autoscale API replicas]
+  API --> EDGE[CDN / edge pack cache]
+  EDGE --> CACHE[Fragment cache]
+  CACHE --> PG[(User store partitioned by user/org)]
   CACHE --> OLAP[(OLAP screens)]
 
-  ING[Ingest workers] --> BR[(Object store bronze)]
+  ING[Ingest workers — single identity] --> BR[(Object store bronze)]
   ING --> SV[(Warehouse silver/gold)]
   SV --> PACKJOB[Pack rebuild jobs]
-  PACKJOB --> CACHE
+  PACKJOB --> EDGE
 
   U -.->|forbidden| SRC[SEC / BLS / BEA]
   ING --> SRC
 ```
 
-Writes (ingest, remap) must not share the hot read path. That is how filing Friday stays fast.
+Writes (ingest, remap) must not share the hot read path. A hot 10-K is one pack, not one rebuild per session. That is how filing Friday stays fast at scale.
 
 ### 2.6 Alert process
 
@@ -335,17 +347,18 @@ Each phase lists **work packages**, **acceptance**, and **explicit non-goals**. 
 | 0.1 | Monorepo, CI, secrets, structured logs, deploy skeleton | — | 0.2 |
 | 0.2 | Ingest control plane: identity, token bucket, backoff, watermark table, bronze writer | 0.1 | 0.3 design |
 | 0.3 | SEC adapter: nightly `companyfacts.zip` + `submissions.zip` stream-extract; daily index diff | 0.2 | — |
-| 0.4 | Macro adapter: ~30 series from Treasury / BLS / BEA (not a FRED mirror) | 0.2 | 0.3 |
+| 0.4 | Source-governance registry + ~30 series from BLS / BEA / EIA / Census / Fed–NY Fed / Treasury (not a FRED mirror) | 0.2 | 0.3 |
 | 0.5 | Entity table: CIK, tickers, names, SIC, coverage tier A/B/C | 0.3 | 0.4 |
-| 0.6 | Silver `sec_fact` + `sec_submission` with `filed_at`, units, accession | 0.3 | 0.5 |
-| 0.7 | Corporate resolver: ~20 line items, period-scoped synonyms, provenance | 0.5, 0.6 | — |
+| 0.6 | Silver facts with `filed_at`, units, accession, **dimensions**, duration (Q vs YTD vs annual) | 0.3 | 0.5 |
+| 0.7 | Corporate resolver: ~20 line items, period-scoped synonyms, confidence, transformation version | 0.5, 0.6 | — |
 | 0.8 | Gold `statement_line` + read API + company page (statements, filings, source hover) | 0.7 | 0.9 |
 | 0.9 | Admin: last ingest, 403/429, budget remaining, coverage count | 0.2 | 0.8 |
 | 0.10 | Golden tests: 10–20 known 10-Ks (Apple-class + one messy mid-cap) | 0.7 | 0.8 |
+| 0.11 | Cacheable company pack contract (versioned, shared across all users) + API rate limits | 0.8 | 0.9 |
 
 **P0 gate (all must be true)**
 
-- Reloading a company page causes **zero** source API calls
+- Reloading a company page causes **zero** source API calls; two users opening the same ticker share one pack
 - A served revenue / net income / assets figure shows tag, accession, form, filed-at
 - Replay of yesterday’s bronze zip does not duplicate facts
 - SEC traffic stays under 8 req/s even during backfill
@@ -355,27 +368,28 @@ Each phase lists **work packages**, **acceptance**, and **explicit non-goals**. 
 
 ### Phase 1 — Intelligence
 
-**Outcome:** a user can go from “this sector looks weak” to a shortlist, with sources.
+**Outcome:** change-first company research: what changed, is it unusual, why might it be, what to inspect. A wide screener comes **after** this works on a 2–3 industry demo.
 
 | WP | Work | Depends on |
 | --- | --- | --- |
-| 1.1 | Materialized company packs (latest statements + meta) | P0 |
-| 1.2 | Peer sets (rule + manual override) | 1.1 |
-| 1.3 | TTM where constructible; peer ranks / simple z-scores | 1.2 |
-| 1.4 | Screener on gold columns + saved views + row cap + CSV export | 1.3 |
-| 1.5 | Sector page: cohort medians + 3–5 paired macro series | 0.4, 1.3 |
-| 1.6 | Watchlists | 1.1 |
-| 1.7 | Filing alerts from **your** index (10-K/10-Q/8-K arrived) | 0.3, 1.6 |
-| 1.8 | Fiscal calendar service (FY end, 53-week, period keys) | 1.3 |
+| 1.1 | Shared packs + fiscal calendar | P0 |
+| 1.2 | Deterministic metrics (YoY, QoQ, TTM, margins, FCF, leverage, conversion, inventory/receivables vs revenue) | 1.1 |
+| 1.3 | Explainable signal engine (10–20 rules on the demo universe first) | 1.2 |
+| 1.4 | Peer engine: industry + size + geo start; user-selected override; medians/ranks/divergence | 1.3 |
+| 1.5 | Curated driver map per sector (plausible vs mere correlation) | 0.4, 1.3 |
+| 1.6 | Change-first company page + evidence drill-down + filing diffs | 1.3–1.5 |
+| 1.7 | Watchlists + alerts from **your** index | 1.1 |
+| 1.8 | Scanner on gold signals (only after 1.6 is excellent on the demo set) | 1.3, 1.6 |
 
 **P1 gate**
 
-- Screen of Tier A returns in interactive time from **gold**, not raw facts
-- Overlay series have citations and stored copyright/source class
-- Alert on a new 10-Q does not fetch EDGAR in the request path
-- Export includes provenance columns
+- Every flag opens to formula, periods, and source facts (Observed vs Calculated labeled)
+- Drivers are a curated sector list, not a dump of thirty series
+- Two users share one pack; new 10-Q precomputes signals (not on page view)
+- Alert path does not fetch EDGAR
+- SIC-only peers can be overridden
 
-**P1 non-goals:** DCF, chat, 13F, as-of toggle (design it; ship in P2).
+**P1 non-goals:** DCF, generic chat, 13F, full graph, portfolio, as-of toggle (design it; ship in P2).
 
 ### Phase 2 — Events and memory
 
@@ -485,13 +499,14 @@ Each phase lists **work packages**, **acceptance**, and **explicit non-goals**. 
 
 If only one slice is built, it is this — not a chatbot, not a modeler:
 
-1. Ingest plane + SEC bulk + index diff  
-2. Entity + corporate resolver + provenance  
-3. Company page + filing list  
-4. Admin budgets / 403s  
-5. Then immediately: packs + screener + one sector overlay  
+1. Ingest plane + SEC bulk + index diff + source-governance registry  
+2. Entity + corporate resolver (YTD vs quarterly, confidence, dimensions)  
+3. Demo universe: **two or three industries**, several years of filings  
+4. 10–20 intelligence rules + change-first page + evidence drill-down  
+5. Credible peers + curated drivers per industry  
+6. Admin budgets / 403s + shared packs  
 
-That slice proves the architecture. Everything on the project map hangs off it.
+Then scanner, then tool-using AI, then events/graph/portfolio. A wide shallow universe does not prove the product.
 
 ---
 
@@ -518,4 +533,4 @@ One person can start P0. Mapping quality and filing-season ops do not stay a sid
 - **Build plan (§3)** — the gated sequence and the work inside each gate.  
 - **Investigation** — why these constraints exist (rate limits, XBRL, FRED, scale).
 
-When a feature is proposed, place it on the phase map. If it needs AI, models, or econometrics and P0–P2 are not green, it is out of order.
+When a feature is proposed, run the feature filter in [AI_GUIDE.md](./AI_GUIDE.md) §16, then place it on the phase map. AI belongs after P1 tools exist. Econometrics belongs after `as_of`.
