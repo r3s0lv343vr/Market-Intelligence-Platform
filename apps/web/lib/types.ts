@@ -99,6 +99,8 @@ export type CompanyPack = {
   company: Company;
   packVersion: string;
   mappingVersion: string;
+  generation: number;
+  publishedAt: string;
   signals: Signal[];
   lines: StatementLine[];
   filings: Filing[];

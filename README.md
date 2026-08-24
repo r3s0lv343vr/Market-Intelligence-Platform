@@ -1,10 +1,19 @@
 # Trace Market Intelligence
 
-P0 research UI on a **fixture warehouse**. The app does not call SEC, BLS, BEA, or other upstream APIs.
+P0 research UI on a **fixture warehouse**. The website does not call SEC, BLS, BEA, or other upstream APIs.
 
 **Identity (ingest jobs only):** `TraceMI/0.1 (Trace Market Intelligence; tracemarketintelligence@gmail.com)`
 
-Live SEC contact stays **off** until ingest is enabled on a dedicated host with both `TRACE_INGEST_ENABLED=true` and `TRACE_INGEST_CONFIRM=TraceMI/0.1`. User HTTP handlers cannot turn that on.
+## How updates work
+
+There are two planes:
+
+1. **Website (serving)** — what people use. It only reads the **live** pack. A page load never waits for a download.
+2. **Nightly worker (ingest)** — a timer at **3:30 a.m. US Eastern**, after SEC’s ~3:00 a.m. ET bulk files. It builds a **staging** copy, then swaps the live pointer. You do not click this.
+
+While the worker runs, people anywhere in the world keep using the current copy. When they refresh or open another page, they get the new copy if it has been published.
+
+Live EDGAR stays off until the worker has persistent bronze storage **and** both `TRACE_INGEST_ENABLED=true` and `TRACE_INGEST_CONFIRM=TraceMI/0.1`. Do not set those on Vercel.
 
 ## Run locally
 
@@ -20,7 +29,7 @@ npm run dev
 
 ## Vercel
 
-The fixture app is the Vercel project **`market-intelligence-platform`**. Root Directory is **`apps/web`**. Do not set ingest env vars on Vercel — serving and ingest stay separate.
+The website is the Vercel project **`market-intelligence-platform`**. Root Directory is **`apps/web`**. A daily cron at 08:30 UTC is the clock; that route does not download EDGAR.
 
 Git auto-deploy needs the [Vercel GitHub app](https://github.com/apps/vercel) installed on this repo. Until then, production deploys are CLI uploads of this branch.
 

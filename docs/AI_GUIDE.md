@@ -1,6 +1,6 @@
 # Market Intelligence Platform — AI Guide
 
-**Product:** Trace Market Intelligence. **Ingest identity:** `TraceMI/0.1 (Trace Market Intelligence; tracemarketintelligence@gmail.com)`. Live source calls stay off until an ingest job is explicitly enabled on a dedicated host.
+**Product:** Trace Market Intelligence. **Ingest identity:** `TraceMI/0.1 (Trace Market Intelligence; tracemarketintelligence@gmail.com)`. Nightly bulk ingest is a timer (3:30 a.m. US Eastern). The website never downloads EDGAR. Users keep the current pack until they refresh or change pages.
 
 **Read this first** before writing code, designing a feature, or calling a government API.
 

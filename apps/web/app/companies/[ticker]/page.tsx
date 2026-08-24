@@ -2,6 +2,8 @@ import { notFound } from "next/navigation";
 import { CompanyView } from "@/components/CompanyView";
 import { getPack } from "@/lib/warehouse";
 
+export const dynamic = "force-dynamic";
+
 export default async function CompanyPage({
   params,
 }: {

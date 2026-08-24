@@ -14,6 +14,6 @@ export function ingestStatus(env: NodeJS.ProcessEnv = process.env) {
     firstPullsIfEnabled: SEC_BULK_URLS,
     servingRule: "User HTTP handlers read the warehouse only. They never construct an ingest client.",
     flagCaution:
-      "Do not enable live ingest from Vercel request handlers or from shared cloud-agent IPs. One identity, bulk zips first, stop on 403/429.",
+      "Automatic nightly job at 3:30 a.m. US Eastern. The website never downloads EDGAR. A worker builds a new pack copy, then swaps it. People keep reading the current copy until they refresh or open another page.",
   };
 }

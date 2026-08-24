@@ -21,3 +21,8 @@ test("user-facing routes never import the ingest HTTP client", () => {
     assert.doesNotMatch(src, /ingest\/control-plane|secGet|getJobControlPlane/, rel);
   }
 });
+
+test("nightly clock route does not import the SEC fetch client", () => {
+  const src = readFileSync(path.join(root, "app/api/cron/ingest/route.ts"), "utf8");
+  assert.doesNotMatch(src, /ingest\/control-plane|secGet/);
+});

@@ -19,8 +19,7 @@ function main(): void {
     process.exit(0);
   }
 
-  console.error("Live ingest is enabled in this environment. This script does not download yet (WP 0.3).");
-  console.error("Unset TRACE_INGEST_ENABLED unless you are running a dedicated ingest host.");
+  console.error("Live ingest flags are set. This script still does not download. Unset TRACE_INGEST_ENABLED on any website host.");
   process.exit(2);
 }
 

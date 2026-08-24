@@ -26,8 +26,8 @@ export function CompanyView({ pack }: { pack: CompanyPack }) {
           <span className="text-mute font-medium">{pack.company.ticker}</span>
         </h1>
         <p className="mt-2 text-sm text-mute">
-          Pack {pack.packVersion} · mapping {pack.mappingVersion} · TraceMI shared pack · zero
-          upstream API calls
+          Live generation {pack.generation} · {pack.packVersion} · published {pack.publishedAt.slice(0, 16)}Z
+          · refresh or open another page to pick up a newer generation
         </p>
       </div>
 
