@@ -51,6 +51,7 @@ If a request conflicts with these, follow the rules and say so.
 10. **No extra source calls to look busy.** No polling BLS/BEA every few minutes. Honor release calendars.
 11. **Do not start P4/P5 to look advanced.** Chat, econometrics, and buy/sell signals amplify wrong mapping.
 12. **This is not an advice engine.** No autonomous “buy/sell.” Modeling tools are fine; recommendations are a compliance change.
+13. **Design serving for a large audience.** 1,500 users is an early cohort, not the ceiling. Shared packs, quotas, and a partitioned user store from P0. User growth never changes ingest.
 
 ### Behaviors that get the platform flagged
 
@@ -107,7 +108,7 @@ Coverage tiers: **A** watchlist/operating names (incremental + nightly), **B** p
                               ▼
                     gold    standardized statements, events, metrics
                               ▼
-                    packs + cache + product API     ── 1,500+ users
+                    packs + cache + product API     ── large user base
                     jobs (alerts, models, exports, later AI)
 ```
 
@@ -132,13 +133,16 @@ Every read path eventually accepts `as_of`. Latest-restated vs as-of-T is a prod
 
 XBRL is a shared dictionary filers do not use the same way. There is no universal revenue tag. `Revenues`, `SalesRevenueNet`, `RevenueFromContractWithCustomerExcludingAssessedTax` all appear. Custom extensions are invisible to a fixed list. Presentation/calculation linkbases (P3+) recover extensions and statement order.
 
-**Serving for 1,500 users**
+**Serving for a large user base (1,500 is only an early cohort)**
 
-- Pack path (Postgres + Redis): company profile
-- OLAP path: screens and percentiles
+- User growth must not add source API calls. Ingest stays one identity.
+- Shared **versioned company packs** — identical for every user at a given `as_of` / mapping version; CDN + Redis
+- Pack path for company profiles; OLAP path for screens; user/org store **separate and partitioned**
 - Filings in object storage + search (P4)
 - Materialize TTM, peer ranks, screen columns — do not compute on every page view
-- Caps: screen rows, export rate, job concurrency, AI questions
+- Caps and tiers: screen rows, export rate, job concurrency, AI questions — mandatory before the audience is large
+- Autoscale API/web only. Never autoscale ingest by adding IPs
+- WAF/bot controls; load-shed AI/export before company pages
 - Writes (ingest, remap) must not share the hot read path
 
 **Suggested layout**
@@ -267,6 +271,7 @@ Do not estimate calendar time. A phase is **done** only when its gate is true. Y
 | 0.8 | Gold `statement_line` + read API + company page |
 | 0.9 | Admin: last ingest, 403/429, budget remaining, coverage |
 | 0.10 | Golden tests on 10–20 known 10-Ks (clean + messy) |
+| 0.11 | Versioned shared company pack + API rate limits (two users, one pack) |
 
 **Gate:** reload = **zero** source calls; number shows tag/accession/form/filed-at; bronze replay is idempotent; SEC < 8 req/s; banks show unmapped, not fake revenue.
 
@@ -399,6 +404,7 @@ Do not treat this as P0 scope.
 - [ ] For screens/models/AI: is `as_of` defined (or explicitly “latest restated”)?
 - [ ] For AI: can every dollar be traced to a tool result?
 - [ ] Would this feature work if EDGAR returned 403 for an hour? (last-good packs)
+- [ ] If 10× more users opened this page at once, would they share a pack — or multiply source/DB work?
 
 ---
 

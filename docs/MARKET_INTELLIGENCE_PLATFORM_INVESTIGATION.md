@@ -5,7 +5,7 @@ This document is an investigation of what it would take to build a market-intell
 - Compiles government and public financial data into decision-useful views
 - Pulls company financials from the SEC and related sources without being flagged
 - Keeps that corpus current as quarterly (and intra-quarter) filings arrive
-- Serves **1,500+ users** with fast access
+- Serves a **large user base** (far beyond an early cohort of ~1,500) with fast access
 - Can later add AI assistance, financial modeling, statistics, and econometrics
 - Can be enhanced beyond the first warehouse (events, as-of queries, semantic layer — §§19–20)
 
@@ -23,7 +23,7 @@ The single most important design rule:
 
 > **User traffic never hits source APIs.** Users query your warehouse. A small number of controlled ingest jobs pull from SEC, FRED, BLS, BEA, Census, Treasury, EIA, and similar sources. Those jobs use official bulk files whenever they exist, identify themselves, and stay well under published limits.
 
-If you let 1,500 users (or even 50 concurrent analysts) trigger per-company SEC calls, you will be rate-limited or IP-blocked. The SEC’s fair-access rule is **10 requests per second per requester, regardless of how many machines you use**. Spreading the same workload across IPs to evade that limit is exactly the behavior they reserve the right to block.
+If you let users — 50 concurrent analysts or hundreds of thousands of sessions — trigger per-company SEC calls, you will be rate-limited or IP-blocked. User count does not raise the SEC budget. The fair-access rule is **10 requests per second per requester, regardless of how many machines you use**. Spreading the same workload across IPs to evade that limit is exactly the behavior they reserve the right to block. A large audience makes the warehouse rule *stricter*, not looser.
 
 The second most important finding:
 
@@ -36,13 +36,13 @@ What this means for the build:
 | SEC + public-data ingest without flagging | High, if bulk-first | Discipline, not scale |
 | Decision-useful compilation | High, but not automatic | XBRL normalization, entity resolution, pairing |
 | Ongoing quarterly (and intra-quarter) updates | High | Filing-season surge + restatements |
-| Fast access for 1,500+ users | High | Serving layer, not ingest |
+| Fast access for a large user base | High if packs are shared | Serving, cache, tenancy — ingest stays constant |
 | AI assistance | High for RAG/summaries; constrained for training | Numbers must come from the warehouse, not the model |
 | Financial modeling | High | Standardized 3-statement mapping |
 | Statistics | High | Point-in-time correctness |
 | Econometrics | High as a later compute plane | Vintage data, job isolation, methodology |
 
-1,500 users is not a hyperscale problem. It is a **data-correctness and query-isolation** problem. The expensive failures are wrong numbers, look-ahead bias, blocked source IPs, and a UI that dumps tables without helping someone decide.
+A large audience is two problems at once: **data correctness** (wrong numbers, look-ahead, blocked source IPs) and **serving scale** (shared pack cache, isolated jobs, abuse, cost). Ingest does not grow with users. The read path, private-state store, and quotas do.
 
 ---
 
@@ -212,7 +212,7 @@ The operational fix is a **single ingest control plane**: one global scheduler, 
                     │  Product APIs  ·  query cache  ·  jobs  │
                     └──────────────────┬──────────────────────┘
                                        ▼
-                                 1,500+ users
+                                 large user base (shared packs)
 ```
 
 ### 4.1 Non-negotiable rules
@@ -361,85 +361,110 @@ Do **not** compute TTM and peer ranks in the request path for every page view.
 | Alerting | Filing and threshold watches (query warehouse, not SEC) |
 | Admin | Source health, mapping QA, copyright flags |
 
-A modular monolith is enough for the first version. Split ingest and serving early so a mapping rebuild cannot take down company pages.
+A modular monolith is enough for **ingest + resolver**. Serving must be designed horizontally from P0 (shared packs, cache, separate user store) so a large audience is a capacity change, not a rewrite. Split ingest from serving so a mapping rebuild cannot take down company pages.
 
 ---
 
-## 6. Scale for 1,500+ users
+## 6. Scale for a large user base
 
-1,500 registered users is **small for HTTP** and **material for analytical compute**.
+**1,500 users is an early operating point, not the design target.** The platform must serve many more — tens to hundreds of thousands of registered users, with a path beyond that if the product is public. User growth must not add a single SEC/BLS/BEA call.
+
+Two planes scale differently:
+
+| Plane | How it scales with users |
+| --- | --- |
+| **Ingest + gold warehouse** | Almost **constant**. One universe of filings and overlays. Same control plane, same 10 req/s SEC ceiling. |
+| **Serving + private state** | **Linear to super-linear.** Sessions, watchlists, models, alerts, exports, AI. Filing-season thundering herds (everyone opens the same 10-K). |
+
+Design the read path as a large multi-tenant product from P0: shared immutable packs, cache-first company pages, isolated jobs. Do not build a 1,500-analyst monolith and “add Kubernetes later.”
 
 ### 6.1 Load shape
 
-Assumptions for planning, not a promise:
+Planning bands, not promises. Size the architecture so moving right is a capacity change, not a rewrite.
 
-| Signal | Rough planning range |
-| --- | --- |
-| MAU | 1,500 |
-| DAU | 300–600 on busy markets / filing weeks |
-| Concurrent sessions | 50–200 typical; 300+ at open or on a hot 10-K day |
-| Read QPS | Low hundreds if pages are pack-based |
-| Heavy jobs | Screens, exports, models, regressions — bursty |
+| Band | Registered users (order) | Concurrent sessions (busy) | What dominates |
+| --- | --- | --- | --- |
+| Early | thousands | hundreds | Mapping QA, pack correctness |
+| Design target | tens–hundreds of thousands | thousands–tens of thousands | Cache hit rate, quotas, abuse |
+| Beyond | larger public audience | market-open / filing spikes | Edge cache, read replicas, load shed |
 
-The failure mode at this size is not “we need Kubernetes tomorrow.” It is:
+Other load facts:
 
-- A screener that tablescans raw facts
-- N+1 company-fact queries
-- Unbounded Excel exports
-- 40 users kicking off panel regressions at once
-- AI endpoints that embed entire 10-Ks on every question
+- Read QPS is high only if pages miss cache. A hot company pack is **identical for every user** at a given `as_of` / mapping version. That is the main scale lever.
+- Heavy jobs (screens, exports, models, AI) are bursty and **do not share** the pack read path.
+- Bots and scrapers will try to clone the warehouse. Treat unauthenticated and bulk-export traffic as hostile.
+- Filing Friday: one NVDA/Apple 10-K can look like a DDoS if every session rebuilds facts.
 
-### 6.2 What to provision for
+### 6.2 Serving architecture (design for the large band)
 
-**Must have at 1,500 users**
+**Must have from the start (even if traffic is still small)**
 
-- Horizontal web/API replicas behind a load balancer
-- Connection pooling to the primary DB
-- Redis (or equivalent) for sessions, rate limits, and hot packs
-- CDN for the SPA/static assets
-- Per-user and per-IP rate limits on **your** API (this protects you, not the SEC)
-- Async job queue with concurrency caps and per-tenant quotas
-- Observability: ingest success, source 429s, pack latency, job duration, cache hit rate
-- Backups and point-in-time recovery on the warehouse
+- Horizontal, autoscale **API/web only** — never autoscale ingest by adding IPs
+- Shared **versioned company packs** as the unit of cache (CDN / edge + Redis)
+- Fragment cache so a Form 4 does not invalidate the income statement
+- Connection pooling; user/session store **partitioned by user id**, separate from gold
+- Dedicated OLAP (or warehouse) for screens — not the OLTP primary
+- API gateway: auth, per-user / per-IP / per-tier rate limits, WAF/bot controls
+- Async job plane with global, per-tier, and per-user concurrency caps
+- Load-shed flags: disable AI, export, and heavy screens before company pages
+- Observability: cache hit rate, pack p95, queue depth, 429s **on your API**, source 403/429 (should stay ~0 from users)
+- Backups and PITR on warehouse + user store
 
-**Should have**
+**Add as the audience grows (capacity, not new product)**
 
-- Read replicas or a dedicated OLAP store for screens
-- Feature flags for filing-season load shedding (disable heavy AI/export first)
-- Row-level security if any user data is private (watchlists, models, notes)
+- Read replicas / multi-AZ for the user store and pack metadata
+- Multi-region **read** of packs (replicate artifacts; ingest stays single-region, single identity)
+- Notification fan-out (email/push) as its own system — not a loop in the API box
+- Search cluster isolated from pack API
+- Paid vs free tiers with hard quotas (AI, export, job minutes)
 
-**Not required yet**
+**Still do not do**
 
-- Multi-region active-active
-- Per-tenant physical databases
-- Streaming-everything architectures
+- Per-tenant physical warehouses of SEC data (the gold corpus is shared)
+- Live-proxy “scale-out” to EDGAR
+- Streaming-everything as a substitute for nightly bulk + incremental accessions
 
 ### 6.3 Multi-tenancy and product limits
 
-Even a “single shared dataset” product has private state: watchlists, models, notes, saved screens, alert rules. Isolate that from the shared gold tables.
+Shared gold; private everything else: watchlists, models, notes, saved screens, alert rules, API keys. Isolate by `user_id` / `org_id` with row-level security. Teams will appear at large scale whether you plan for them or not — design org tenancy before you have tens of thousands of individuals.
 
-Put explicit caps in the product, not just in infra:
+Caps are a **product requirement**, not an infra nicety. At large N, a few users *will* try to download the warehouse and a few will fork-bomb the job queue.
 
-- Universe size on interactive screens (e.g. 5,000 rows, then export-as-job)
-- Concurrent models / regressions per user
-- AI tokens / questions per day
-- Export frequency
+| Cap | Why |
+| --- | --- |
+| Interactive screen row limit; export-as-job after that | Protect OLAP |
+| Concurrent models / regressions per user and per tier | Protect workers |
+| AI questions / tokens per day per tier | Cost and abuse |
+| Export frequency and bytes | Scraping |
+| Alert fan-out rate | Notification storms |
+| Unauthenticated pack access | Decide public vs login-gated; cache accordingly |
 
-1,500 users will include a few who will try to download the whole warehouse. That should be a paid/job path, not a GET.
+Anonymous or SEO company pages, if you offer them, must be **pack-only** and heavily cached. They are the first thing that will be scraped.
 
 ### 6.4 Cost shape (order of magnitude, not a quote)
 
-The bill is dominated by **storage + OLAP + AI**, not by 1,500 web sessions.
+Shared warehouse cost grows with **coverage and mapping versions**, not with user count. What grows with users:
 
 | Item | Why it grows |
 | --- | --- |
-| Object storage | Raw zips + filing HTML/text for covered names |
-| Warehouse | Facts + gold tables + versions of mappings |
-| Search index | Sectioned 10-K/10-Q text |
-| Jobs | Model runs, screen materializations |
-| LLM | Only if you add AI; easy to exceed infra cost |
+| Edge/CDN + Redis | Pack hits at scale (cheap if hit rate is high) |
+| User store | Watchlists, theses, models, sessions |
+| Job minutes | Models, exports, custom screens |
+| Search / embeddings | Only if P4 is on; cache per accession |
+| LLM | Dominates the bill if unbounded; tier or it will exceed infra |
+| Notifications | Filing alerts × large watchlists |
+| Support / abuse ops | Bots, credential stuffing, ToS |
 
-A fundamentals-only v1 with a few thousand companies and a thin macro overlay can stay in a conventional cloud budget. Full-universe notes + embeddings + unbounded chat will not.
+A fundamentals-only v1 with a few thousand companies can stay conventional **until** you turn on unbounded chat, full-universe notes, or free export of gold. Those are the cost cliffs, not “we added more logins.”
+
+### 6.5 What does *not* change at large scale
+
+- One ingest identity, ~5–8 SEC req/s, bulk first
+- Users never hit source APIs
+- Resolver and provenance rules
+- Bronze replay instead of HTML crawl
+
+If those break, more users only fail faster.
 
 ---
 
@@ -701,7 +726,7 @@ A concrete, boring stack that matches the constraints:
 | Jobs | Queue + workers | Models, AI, exports |
 | API | Authenticated REST/JSON; later BFF | Simple for a dense UI |
 | UI | React/Next (or similar) + a serious table/grid | Desktop-first research UX |
-| Auth | SSO-ready (OIDC) | 1,500 users will include teams |
+| Auth | OIDC + org tenancy from the start | A large audience will include teams and scrapers |
 | Observability | Metrics + traces + source-budget dashboards | Flagging prevention |
 
 Alternatives are fine. The architecture above is chosen because it keeps ingest, mapping, and serving separable.
@@ -715,7 +740,7 @@ Alternatives are fine. The architecture above is chosen because it keeps ingest,
 - **FRED/third-party copyright and AI-training prohibitions** — see §3.3.
 - **Not investment advice** in the product and in the company legal posture.
 - **If you charge and recommend:** securities / RIA questions appear. Get counsel before “signals.”
-- **User-generated models and notes** are customer data; backup and deletion policies matter at 1,500 users.
+- **User-generated models and notes** are customer data; backup, deletion, and org isolation matter more as the audience grows.
 - **Security:** this is not PCI, but watchlists and models are sensitive. SSO, audit logs, and no leaked source API keys in the browser.
 
 ---
@@ -753,7 +778,7 @@ These are not technical blockers, but they change the build:
 3. **Commercial posture:** research tool vs advice product (drives compliance and AI copy).
 4. **FRED vs original agencies** for the first macro overlay.
 5. **Bank coverage in v1.** Including banks without a bank template will make the product look broken.
-6. **Team vs individual accounts** at 1,500 users.
+6. **Team vs individual vs public/SEO pages** — tenancy and cache policy for a large audience.
 
 ---
 
@@ -857,7 +882,7 @@ Data without a place to decide gets exported to Excel and never comes back.
 - Composite alerts: “10-Q filed AND TTM FCF down AND clustered Form 4 sales AND 8-K 2.02”
 - One-click “decision pack” (PDF/Excel): statements, peers, overlay, events, sources
 
-This is how 1,500 users become a product rather than 1,500 one-off browsers.
+This is how a large audience becomes a product rather than a crowd of one-off browsers.
 
 **7. Quality and forensic flags (explainable)**
 
@@ -984,7 +1009,7 @@ Operate the ingest plane like a product:
 
 Dead-letter queues + replay from bronze are mandatory. If a zip is bad, you must not “fix” it by recrawling HTML.
 
-### 20.6 Serving architecture upgrades (swift access at 1,500+)
+### 20.6 Serving architecture upgrades (swift access at large scale)
 
 | Upgrade | Effect |
 | --- | --- |
@@ -1041,13 +1066,15 @@ The backend is incomplete without an internal tool:
 
 This is how mapping quality compounds. Without it, the resolver rots after the first FASB taxonomy update.
 
-### 20.11 Security and tenancy (1,500 users will include teams)
+### 20.11 Security and tenancy (a large audience includes teams and abuse)
 
-- SSO (OIDC), SCIM if you sell to firms
-- Row-level isolation for theses, models, alerts
-- Audit log of who exported what
+- OIDC; SCIM when selling to firms
+- Org + user row-level isolation for theses, models, alerts
+- Audit log of who exported what (scraping shows up here)
+- WAF / bot controls on pack and export endpoints
 - Source API keys never in the browser; rotate BEA/BLS/EIA/FRED keys
 - Separate job IAM from the public API role
+- Per-tier quotas before the user count is large — they are harder to retrofit
 
 ### 20.12 Suggested backend enhancement order
 

@@ -149,7 +149,7 @@ If the resolver is weak, the screener, models, and AI are all confidently wrong.
     └── BUILD_PLAN.md
 ```
 
-A modular monolith (one deployable API + ingest workers + web) is enough through P2. Split ingest from serving at P0 so a mapping rebuild cannot take down company pages.
+Ingest + resolver may stay a modular monolith. Serving must be cache-first and horizontally scalable from P0: the audience is far larger than an early cohort. Split ingest from serving so a mapping rebuild cannot take down company pages. Never scale ingest by adding IPs.
 
 ---
 
@@ -263,25 +263,29 @@ flowchart LR
 
 If a view cannot end in watch, model, note, or export, it is a database browser.
 
-### 2.5 Read path vs write path (1,500 users)
+### 2.5 Read path vs write path (large audience)
+
+User growth hits the **read and job planes only**. Ingest stays one identity.
 
 ```mermaid
 flowchart TB
-  U[Users] --> API[API replicas]
-  API --> CACHE[Pack / fragment / screen cache]
-  CACHE --> PG[(Postgres packs / users)]
+  U[Large user base] --> GW[API gateway / WAF / quotas]
+  GW --> API[Autoscale API replicas]
+  API --> EDGE[CDN / edge pack cache]
+  EDGE --> CACHE[Fragment cache]
+  CACHE --> PG[(User store partitioned by user/org)]
   CACHE --> OLAP[(OLAP screens)]
 
-  ING[Ingest workers] --> BR[(Object store bronze)]
+  ING[Ingest workers — single identity] --> BR[(Object store bronze)]
   ING --> SV[(Warehouse silver/gold)]
   SV --> PACKJOB[Pack rebuild jobs]
-  PACKJOB --> CACHE
+  PACKJOB --> EDGE
 
   U -.->|forbidden| SRC[SEC / BLS / BEA]
   ING --> SRC
 ```
 
-Writes (ingest, remap) must not share the hot read path. That is how filing Friday stays fast.
+Writes (ingest, remap) must not share the hot read path. A hot 10-K is one pack, not one rebuild per session. That is how filing Friday stays fast at scale.
 
 ### 2.6 Alert process
 
@@ -344,10 +348,11 @@ Each phase lists **work packages**, **acceptance**, and **explicit non-goals**. 
 | 0.8 | Gold `statement_line` + read API + company page (statements, filings, source hover) | 0.7 | 0.9 |
 | 0.9 | Admin: last ingest, 403/429, budget remaining, coverage count | 0.2 | 0.8 |
 | 0.10 | Golden tests: 10–20 known 10-Ks (Apple-class + one messy mid-cap) | 0.7 | 0.8 |
+| 0.11 | Cacheable company pack contract (versioned, shared across all users) + API rate limits | 0.8 | 0.9 |
 
 **P0 gate (all must be true)**
 
-- Reloading a company page causes **zero** source API calls
+- Reloading a company page causes **zero** source API calls; two users opening the same ticker share one pack
 - A served revenue / net income / assets figure shows tag, accession, form, filed-at
 - Replay of yesterday’s bronze zip does not duplicate facts
 - SEC traffic stays under 8 req/s even during backfill
