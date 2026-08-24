@@ -347,10 +347,10 @@ Each phase lists **work packages**, **acceptance**, and **explicit non-goals**. 
 | 0.1 | Monorepo, CI, secrets, structured logs, deploy skeleton | — | 0.2 |
 | 0.2 | Ingest control plane: identity, token bucket, backoff, watermark table, bronze writer | 0.1 | 0.3 design |
 | 0.3 | SEC adapter: nightly `companyfacts.zip` + `submissions.zip` stream-extract; daily index diff | 0.2 | — |
-| 0.4 | Macro adapter: ~30 series from Treasury / BLS / BEA (not a FRED mirror) | 0.2 | 0.3 |
+| 0.4 | Source-governance registry + ~30 series from BLS / BEA / EIA / Census / Fed–NY Fed / Treasury (not a FRED mirror) | 0.2 | 0.3 |
 | 0.5 | Entity table: CIK, tickers, names, SIC, coverage tier A/B/C | 0.3 | 0.4 |
-| 0.6 | Silver `sec_fact` + `sec_submission` with `filed_at`, units, accession | 0.3 | 0.5 |
-| 0.7 | Corporate resolver: ~20 line items, period-scoped synonyms, provenance | 0.5, 0.6 | — |
+| 0.6 | Silver facts with `filed_at`, units, accession, **dimensions**, duration (Q vs YTD vs annual) | 0.3 | 0.5 |
+| 0.7 | Corporate resolver: ~20 line items, period-scoped synonyms, confidence, transformation version | 0.5, 0.6 | — |
 | 0.8 | Gold `statement_line` + read API + company page (statements, filings, source hover) | 0.7 | 0.9 |
 | 0.9 | Admin: last ingest, 403/429, budget remaining, coverage count | 0.2 | 0.8 |
 | 0.10 | Golden tests: 10–20 known 10-Ks (Apple-class + one messy mid-cap) | 0.7 | 0.8 |
