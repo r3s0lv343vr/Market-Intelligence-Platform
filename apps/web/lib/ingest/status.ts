@@ -14,6 +14,6 @@ export function ingestStatus(env: NodeJS.ProcessEnv = process.env) {
     firstPullsIfEnabled: SEC_BULK_URLS,
     servingRule: "User HTTP handlers read the warehouse only. They never construct an ingest client.",
     flagCaution:
-      "Automatic nightly job at 3:30 a.m. US Eastern. The website never downloads EDGAR. A worker builds a new pack copy, then swaps it. People keep reading the current copy until they refresh or open another page.",
+      "Automatic 3:30 a.m. US Eastern worker streams companyfacts.zip and submissions.zip into write-once bronze, then diffs the daily index without fetching missing filings. The website never downloads EDGAR. Users keep the live pack until silver/gold publishes a new generation.",
   };
 }

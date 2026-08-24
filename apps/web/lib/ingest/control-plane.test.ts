@@ -64,6 +64,7 @@ test("identified GET sends locked User-Agent and no generic client string", asyn
   await plane.secGet(SEC_BULK_URLS.companyfacts);
   assert.ok(seen);
   assert.equal(seen.get("User-Agent"), USER_AGENT);
+  assert.equal(seen.get("Accept-Encoding"), "identity");
   assert.match(seen.get("User-Agent") ?? "", /Trace Market Intelligence/);
   assert.doesNotMatch(seen.get("User-Agent") ?? "", /python-requests|curl\/|node/i);
 });

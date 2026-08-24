@@ -9,11 +9,17 @@ P0 research UI on a **fixture warehouse**. The website does not call SEC, BLS, B
 There are two planes:
 
 1. **Website (serving)** — what people use. It only reads the **live** pack. A page load never waits for a download.
-2. **Nightly worker (ingest)** — a timer at **3:30 a.m. US Eastern**, after SEC’s ~3:00 a.m. ET bulk files. It builds a **staging** copy, then swaps the live pointer. You do not click this.
+2. **Nightly worker (ingest)** — a timer at **3:30 a.m. US Eastern**. It streams `companyfacts.zip` and `submissions.zip` into write-once bronze and diffs the daily index (lists missing accessions; does not fetch them). User packs are not rebuilt until silver/gold. You do not click this.
 
-While the worker runs, people anywhere in the world keep using the current copy. When they refresh or open another page, they get the new copy if it has been published.
+While the worker runs, people anywhere in the world keep using the current copy. When they refresh or open another page, they get a new copy only after a generation is published.
 
-Live EDGAR stays off until the worker has persistent bronze storage **and** both `TRACE_INGEST_ENABLED=true` and `TRACE_INGEST_CONFIRM=TraceMI/0.1`. Do not set those on Vercel.
+Live EDGAR stays off on the website. On a worker host, set `TRACE_INGEST_HOST_ROLE=worker`, `TRACE_INGEST_ENABLED=true`, and `TRACE_INGEST_CONFIRM=TraceMI/0.1`. Do not set those on Vercel.
+
+```bash
+cd apps/web
+npm run ingest:worker          # waits for 3:30 a.m. US Eastern
+npm run ingest:worker:once     # run the tick now (still refuses SEC without the gates)
+```
 
 ## Run locally
 

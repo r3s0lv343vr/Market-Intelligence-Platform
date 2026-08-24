@@ -85,7 +85,7 @@ export class IngestControlPlane {
     const headers = new Headers();
     headers.set("User-Agent", USER_AGENT);
     headers.set("Accept", "application/zip, application/json, text/plain, */*");
-    headers.set("Accept-Encoding", "gzip, deflate");
+    headers.set("Accept-Encoding", url.pathname.endsWith(".zip") ? "identity" : "gzip, deflate");
 
     this.requestCount.sent += 1;
     let response: Response;

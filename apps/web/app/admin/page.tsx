@@ -26,7 +26,11 @@ export default function AdminPage() {
           <span className="text-ink">{schedule.localTime} {schedule.timezone}</span> every day. You
           do not start it by hand. It is a timer, not a button.
         </p>
-        <p className="text-sm leading-6 text-mute">{schedule.userImpact}</p>
+        <p className="text-sm leading-6 text-mute">
+          The worker streams two bulk zips into write-once bronze and diffs the daily index. It does
+          not fetch missing filing files. People keep the live pack; a new generation is published
+          only after silver/gold exist.
+        </p>
         <dl className="grid gap-3 sm:grid-cols-2">
           <div>
             <dt className="text-xs text-mute">Next window</dt>
