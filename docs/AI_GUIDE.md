@@ -1,5 +1,7 @@
 # Market Intelligence Platform — AI Guide
 
+**Product:** Trace Market Intelligence. **Ingest identity:** `TraceMI/0.1 (Trace Market Intelligence; tracemarketintelligence@gmail.com)`. Nightly bulk ingest is a timer (3:30 a.m. US Eastern). The website never downloads EDGAR. Users keep the current pack until they refresh or change pages.
+
 **Read this first** before writing code, designing a feature, or calling a government API.
 
 This guide collates the investigation, enhancement paths, project map, process map, and gated build plan into one instruction set for humans and coding agents.
@@ -8,7 +10,8 @@ This guide collates the investigation, enhancement paths, project map, process m
 | --- | --- |
 | Why these constraints exist | [MARKET_INTELLIGENCE_PLATFORM_INVESTIGATION.md](./MARKET_INTELLIGENCE_PLATFORM_INVESTIGATION.md) |
 | Workstreams, processes, phase work packages | [BUILD_PLAN.md](./BUILD_PLAN.md) |
-| What we kept vs adopted from the product/backend briefs | [MARKET_INTELLIGENCE_PLATFORM_INVESTIGATION.md](./MARKET_INTELLIGENCE_PLATFORM_INVESTIGATION.md) §21 |
+| Intelligence core (Lattice) decisions | [INTELLIGENCE_CORE_DECISIONS.md](./INTELLIGENCE_CORE_DECISIONS.md) — **deferred until the end of this gated build**; do not implement in P0–P4 |
+| Where live SEC ingest will run | [INGEST_WORKER_HOST.md](./INGEST_WORKER_HOST.md) — not Vercel, not this cloud agent |
 
 This product is **not investment advice**. Extracts are not a substitute for the filing. Rate limits and terms change; re-verify official pages before production.
 
@@ -74,7 +77,7 @@ If a request conflicts with these, follow the rules and say so.
 | Browser/client calling `data.sec.gov` | Product API → gold/packs |
 | Fetch companyfacts on cache miss in a user request | Pack rebuild from ingest |
 | Horizontal ingest across many IPs | One control plane, priority queues |
-| `python-requests/2.x` / generic User-Agent | `MarketIntel Platform contact@domain` |
+| `python-requests/2.x` / generic User-Agent | `TraceMI/0.1 (Trace Market Intelligence; tracemarketintelligence@gmail.com)` |
 | Recrawl all exhibits every night | Accession-level cache |
 | Immediate retry on 403/429 | Circuit breaker, page humans, replay bronze |
 | Scrape FRED HTML / train an LLM on FRED | Curated original-agency series + citations |
@@ -289,17 +292,17 @@ Do not estimate calendar time. A phase is **done** only when its gate is true. Y
 
 | WP | Work |
 | --- | --- |
-| 0.1 | Monorepo, CI, secrets, logs, deploy skeleton |
-| 0.2 | Ingest plane: identity, token bucket, backoff, watermarks, bronze writer |
-| 0.3 | SEC: stream-extract nightly zips; daily index diff |
-| 0.4 | Source-governance registry + ~30 series from BLS / BEA / EIA / Census / Fed–NY Fed / Treasury (not a FRED mirror) |
-| 0.5 | Entity: CIK, tickers, names, SIC, tiers A/B/C |
-| 0.6 | Silver `sec_fact` / `sec_submission` with `filed_at`, units, accession |
-| 0.7 | Corporate resolver, period-scoped synonyms, provenance |
-| 0.8 | Gold `statement_line` + read API + company page |
-| 0.9 | Admin: last ingest, 403/429, budget remaining, coverage |
-| 0.10 | Golden tests on 10–20 known 10-Ks (clean + messy) |
-| 0.11 | Versioned shared company pack + API rate limits (two users, one pack) |
+| 0.1 | Monorepo, CI, secrets, logs, deploy skeleton — **coded** |
+| 0.2 | Ingest plane: identity, token bucket, backoff, watermarks, bronze writer — **coded, live off** |
+| 0.3 | SEC: stream-extract nightly zips; daily index diff — **coded; fixture zips only** |
+| 0.4 | Source-governance registry + ~30 series from BLS / BEA / EIA / Census / Fed–NY Fed / Treasury (not a FRED mirror) — **coded; fixture observations** |
+| 0.5 | Entity: CIK, tickers, names, SIC, tiers A/B/C — **coded; demo universe** |
+| 0.6 | Silver `sec_fact` / `sec_submission` with `filed_at`, units, accession — **coded from fixtures; companyfacts parser ready for bronze** |
+| 0.7 | Corporate resolver, period-scoped synonyms, provenance — **coded (~20 lines + GP/FCF)** |
+| 0.8 | Gold `statement_line` + read API + company page — **coded** |
+| 0.9 | Admin: last ingest, 403/429, budget remaining, coverage — **coded** |
+| 0.10 | Golden tests on 10–20 known 10-Ks (clean + messy) — **coded on fixture 10-Ks** |
+| 0.11 | Versioned shared company pack + API rate limits (two users, one pack) — **coded** |
 
 **Gate:** reload = **zero** source calls; two users share one pack; number shows tag/accession/form/filed-at; bronze replay is idempotent; SEC < 8 req/s; banks show unmapped, not fake revenue.
 

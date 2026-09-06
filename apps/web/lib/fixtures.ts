@@ -1,43 +1,8 @@
-import type { Company, Driver, Filing, RawFact, SourceRecord } from "./types";
+import { companyFromEntity, listEntities } from "./entity/table";
+import type { Company, Filing, RawFact } from "./types";
 
-export const MAPPING_VERSION = "corporate-v1";
-export const PACK_VERSION = "fixture-2026-08-24";
-
-export const companies: Company[] = [
-  {
-    cik: "0001000001",
-    ticker: "NSM",
-    name: "Northstar Motors",
-    industry: "Automobile manufacturing",
-    template: "corporate",
-    fiscalYearEnd: "12-31",
-    latestPeriod: "2025-12-31",
-    latestForm: "10-K",
-    latestFiledAt: "2026-02-18",
-  },
-  {
-    cik: "0001000002",
-    ticker: "HBT",
-    name: "Harbor Trust",
-    industry: "Regional bank",
-    template: "bank",
-    fiscalYearEnd: "12-31",
-    latestPeriod: "2025-12-31",
-    latestForm: "10-K",
-    latestFiledAt: "2026-02-27",
-  },
-  {
-    cik: "0001000003",
-    ticker: "LATT",
-    name: "Lattice Soft",
-    industry: "Application software",
-    template: "corporate",
-    fiscalYearEnd: "01-31",
-    latestPeriod: "2026-01-31",
-    latestForm: "10-K",
-    latestFiledAt: "2026-03-12",
-  },
-];
+export const MAPPING_VERSION = "corporate-v2";
+export const PACK_VERSION = "fixture-2026-09-06";
 
 export const filings: Filing[] = [
   {
@@ -90,6 +55,11 @@ export const filings: Filing[] = [
   },
 ];
 
+/** Pack universe: entities that have fixture facts (coverage A). */
+export const companies: Company[] = listEntities()
+  .filter((e) => e.coverageTier === "A")
+  .map((e) => companyFromEntity(e, filings));
+
 function fact(
   cik: string,
   tag: string,
@@ -99,18 +69,21 @@ function fact(
   accession: string,
   form: string,
   filedAt: string,
+  unit = "USD",
+  dimensions?: string,
 ): RawFact {
   return {
     cik,
     taxonomy: "us-gaap",
     tag,
-    unit: "USD",
+    unit,
     periodEnd,
     duration,
     value,
     accession,
     form,
     filedAt,
+    dimensions,
   };
 }
 
@@ -139,6 +112,20 @@ export const facts: RawFact[] = [
   fact("0001000001", "PaymentsToAcquirePropertyPlantAndEquipment", "2025-12-31", "annual", 8_900_000_000, "0001000001-26-000012", "10-K", "2026-02-18"),
   fact("0001000001", "InterestExpense", "2025-12-31", "annual", 1_840_000_000, "0001000001-26-000012", "10-K", "2026-02-18"),
   fact("0001000001", "InterestExpense", "2024-12-31", "annual", 1_504_000_000, "0001000001-25-000008", "10-K", "2025-02-20"),
+  fact("0001000001", "AssetsCurrent", "2025-12-31", "annual", 58_000_000_000, "0001000001-26-000012", "10-K", "2026-02-18"),
+  fact("0001000001", "LiabilitiesCurrent", "2025-12-31", "annual", 42_000_000_000, "0001000001-26-000012", "10-K", "2026-02-18"),
+  fact("0001000001", "ResearchAndDevelopmentExpense", "2025-12-31", "annual", 3_200_000_000, "0001000001-26-000012", "10-K", "2026-02-18"),
+  fact("0001000001", "ResearchAndDevelopmentExpense", "2024-12-31", "annual", 2_900_000_000, "0001000001-25-000008", "10-K", "2025-02-20"),
+  fact("0001000001", "SellingGeneralAndAdministrativeExpense", "2025-12-31", "annual", 8_100_000_000, "0001000001-26-000012", "10-K", "2026-02-18"),
+  fact("0001000001", "IncomeTaxExpenseBenefit", "2025-12-31", "annual", 890_000_000, "0001000001-26-000012", "10-K", "2026-02-18"),
+  fact("0001000001", "EarningsPerShareDiluted", "2025-12-31", "annual", 3.12, "0001000001-26-000012", "10-K", "2026-02-18", "USD/shares"),
+  fact("0001000001", "CommonStockSharesOutstanding", "2025-12-31", "annual", 1_092_000_000, "0001000001-26-000012", "10-K", "2026-02-18", "shares"),
+  fact("0001000001", "Goodwill", "2025-12-31", "annual", 4_100_000_000, "0001000001-26-000012", "10-K", "2026-02-18"),
+  fact("0001000001", "AccountsPayableCurrent", "2025-12-31", "annual", 19_800_000_000, "0001000001-26-000012", "10-K", "2026-02-18"),
+  fact("0001000001", "PaymentsOfDividends", "2025-12-31", "annual", 1_200_000_000, "0001000001-26-000012", "10-K", "2026-02-18"),
+  fact("0001000001", "Revenues", "2025-09-30", "quarter", 41_200_000_000, "0001000001-25-000044", "10-Q", "2025-11-06"),
+  fact("0001000001", "Revenues", "2025-09-30", "ytd", 128_000_000_000, "0001000001-25-000044", "10-Q", "2025-11-06"),
+  fact("0001000001", "Revenues", "2025-12-31", "annual", 4_000_000_000, "0001000001-26-000012", "10-K", "2026-02-18", "USD", "BusinessSegment=Europe"),
   // Stale tag must not win for 2025
   fact("0001000001", "SalesRevenueNet", "2010-12-31", "annual", 62_500_000_000, "0001000001-11-000003", "10-K", "2011-02-28"),
 
@@ -165,100 +152,6 @@ export const facts: RawFact[] = [
   fact("0001000003", "ContractWithCustomerLiability", "2026-01-31", "annual", 1_880_000_000, "0001000003-26-000021", "10-K", "2026-03-12"),
   fact("0001000003", "NetCashProvidedByUsedInOperatingActivities", "2026-01-31", "annual", 1_420_000_000, "0001000003-26-000021", "10-K", "2026-03-12"),
   fact("0001000003", "PaymentsToAcquirePropertyPlantAndEquipment", "2026-01-31", "annual", 186_000_000, "0001000003-26-000021", "10-K", "2026-03-12"),
-];
-
-export const driversByIndustry: Record<string, Driver[]> = {
-  "Automobile manufacturing": [
-    {
-      seriesId: "AUTO-CREDIT",
-      label: "Auto loan rate (illustrative)",
-      source: "NY Fed / fixture",
-      latest: "7.4%",
-      asOf: "2026-01",
-      plausibleFor: "Vehicle affordability and demand",
-      note: "Economically plausible driver — not a causal claim.",
-      copyrightClass: "Public domain: citation requested",
-    },
-    {
-      seriesId: "WAGES",
-      label: "Production worker wages",
-      source: "BLS / fixture",
-      latest: "+3.1% YoY",
-      asOf: "2026-01",
-      plausibleFor: "Labor cost → operating expense",
-      note: "Fixture series. Live BLS ingest is not enabled.",
-      copyrightClass: "Public domain: citation requested",
-    },
-  ],
-  "Regional bank": [
-    {
-      seriesId: "YIELD",
-      label: "2s10s yield curve",
-      source: "Treasury / fixture",
-      latest: "0.42 pp",
-      asOf: "2026-02",
-      plausibleFor: "Net interest margin",
-      note: "Bank template required — do not invent a revenue line.",
-      copyrightClass: "Public domain",
-    },
-  ],
-  "Application software": [
-    {
-      seriesId: "PCE-SOFTWARE",
-      label: "Software investment (illustrative)",
-      source: "BEA / fixture",
-      latest: "+6.8% YoY",
-      asOf: "2025-Q4",
-      plausibleFor: "Enterprise demand backdrop",
-      note: "Plausible overlay, not a company forecast.",
-      copyrightClass: "Public domain: citation requested",
-    },
-  ],
-};
-
-export const sources: SourceRecord[] = [
-  {
-    id: "sec",
-    name: "SEC EDGAR (fixtures only)",
-    role: "Company facts and filings",
-    license: "Public filings; extracts are not a substitute for the filing",
-    updateCalendar: "Live ingest off — User-Agent required before bulk pulls",
-    lastSuccess: "fixture load",
-    status: "fixture",
-    requestsToday: 0,
-    budgetNote: "0 live SEC requests. Budget 5–8 req/s when enabled.",
-  },
-  {
-    id: "bls",
-    name: "BLS",
-    role: "Wages, CPI, employment",
-    license: "Cite BLS; registration for higher daily limits",
-    updateCalendar: "Official release calendar",
-    lastSuccess: "not connected",
-    status: "fixture",
-    requestsToday: 0,
-    budgetNote: "500 queries/day when keyed. Not called.",
-  },
-  {
-    id: "bea",
-    name: "BEA",
-    role: "GDP, industry accounts",
-    license: "Cite BEA; no endorsement",
-    updateCalendar: "Official release calendar",
-    lastSuccess: "not connected",
-    status: "fixture",
-    requestsToday: 0,
-    budgetNote: "100 req/min when keyed. Not called.",
-  },
-  {
-    id: "fed",
-    name: "Fed / NY Fed / Treasury",
-    role: "Rates, credit, fiscal",
-    license: "Prefer original agencies over FRED",
-    updateCalendar: "Publication calendars",
-    lastSuccess: "not connected",
-    status: "fixture",
-    requestsToday: 0,
-    budgetNote: "FRED not used for training. Not called.",
-  },
+  fact("0001000003", "ResearchAndDevelopmentExpense", "2026-01-31", "annual", 1_640_000_000, "0001000003-26-000021", "10-K", "2026-03-12"),
+  fact("0001000003", "SellingGeneralAndAdministrativeExpense", "2026-01-31", "annual", 980_000_000, "0001000003-26-000021", "10-K", "2026-03-12"),
 ];

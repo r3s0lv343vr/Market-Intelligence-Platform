@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Market Intelligence",
+  title: "Trace Market Intelligence",
   description: "What changed, why it may be happening, and what evidence to inspect.",
 };
 

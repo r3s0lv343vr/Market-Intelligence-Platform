@@ -220,7 +220,7 @@ The operational fix is a **single ingest control plane**: one global scheduler, 
 1. **Bulk over chatty.** One nightly `companyfacts.zip` is one request (plus a few for checksums/indexes). Eight thousand per-CIK calls are eight thousand requests.
 2. **One requester identity.** The SEC counts you across machines. Do not “scale ingest horizontally” by adding IPs.
 3. **Stay under the ceiling on purpose.** Target ~5–8 SEC req/s, not 10. Leave room for retries and humans.
-4. **Identify yourself.** `User-Agent: MarketIntel Platform contact@yourdomain.com` (real mailbox that a human reads).
+4. **Identify yourself.** `User-Agent: TraceMI/0.1 (Trace Market Intelligence; tracemarketintelligence@gmail.com)` (real mailbox that a human reads).
 5. **Cache by accession and as-of date.** A 10-K does not change after dissemination. Re-fetching it because a user reloads a page is the definition of an unnecessary call.
 6. **Idempotent loads.** Replaying yesterday’s zip must not duplicate facts.
 7. **Honor calendars.** BLS/BEA/Census have release days. Pull once after the official release, not every hour.

@@ -1,14 +1,38 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import type { CompanyPack } from "@/lib/types";
-import { money, pct, trustLabel } from "@/lib/format";
+import type { CompanyPack, StatementLine } from "@/lib/types";
+import { lineValue, pct, trustLabel } from "@/lib/format";
 
 const tabs = ["Overview", "Financials", "Filings", "Peers", "Drivers"] as const;
+
+function priorPeriod(lines: StatementLine[], latest: string): string | undefined {
+  return [...new Set(lines.map((l) => l.periodEnd))].filter((p) => p < latest).sort().at(-1);
+}
+
+function yoyFor(lines: StatementLine[], concept: string, latest: string): number | null {
+  const prior = priorPeriod(lines, latest);
+  if (!prior) return null;
+  const curr = lines.find((l) => l.concept === concept && l.periodEnd === latest)?.value;
+  const prev = lines.find((l) => l.concept === concept && l.periodEnd === prior)?.value;
+  if (curr == null || prev == null || !prev) return null;
+  return (curr - prev) / prev;
+}
+
+function Provenance({ line }: { line: StatementLine }) {
+  const p = line.provenance;
+  if (!p.tag) return <span className="text-mute">—</span>;
+  return (
+    <span title={`${p.tag} · ${p.form} · ${p.accession} · filed ${p.filedAt} · ${p.mappingVersion} · confidence ${p.confidence}`}>
+      {p.tag} · {p.form} · filed {p.filedAt}
+    </span>
+  );
+}
 
 export function CompanyView({ pack }: { pack: CompanyPack }) {
   const [tab, setTab] = useState<(typeof tabs)[number]>("Overview");
   const [openSignal, setOpenSignal] = useState<string | null>(pack.signals[0]?.id ?? null);
+  const [openLine, setOpenLine] = useState<string | null>(null);
 
   const latestLines = useMemo(
     () => pack.lines.filter((l) => l.periodEnd === pack.company.latestPeriod),
@@ -19,16 +43,18 @@ export function CompanyView({ pack }: { pack: CompanyPack }) {
     <div className="space-y-6">
       <div>
         <div className="text-xs uppercase tracking-wide text-mute">
-          {pack.company.industry} · {pack.company.latestForm} · {pack.company.latestPeriod}
+          {pack.company.industry} · SIC {pack.company.sic} · tier {pack.company.coverageTier} ·{" "}
+          {pack.company.latestForm} · {pack.company.latestPeriod}
         </div>
         <h1 className="mt-1 text-2xl font-semibold tracking-tight">
           {pack.company.name}{" "}
           <span className="text-mute font-medium">{pack.company.ticker}</span>
         </h1>
         <p className="mt-2 text-sm text-mute">
-          Pack {pack.packVersion} · mapping {pack.mappingVersion} · shared for every user · zero
-          upstream API calls
+          Shared pack generation {pack.generation} · {pack.packVersion} · {pack.mappingVersion} ·
+          published {pack.publishedAt.slice(0, 16)}Z
         </p>
+        <p className="mt-1 text-xs text-mute">{pack.disclaimer}</p>
       </div>
 
       <section className="rounded-lg border border-line bg-panel p-4">
@@ -93,10 +119,27 @@ export function CompanyView({ pack }: { pack: CompanyPack }) {
       </div>
 
       {tab === "Overview" && (
-        <p className="max-w-3xl text-sm leading-6 text-mute">
-          Sequence: company → change → explanation → evidence. Numbers below are observed
-          XBRL-style facts or deterministic calculations. Gaps stay gaps.
-        </p>
+        <div className="space-y-3">
+          <p className="max-w-3xl text-sm leading-6 text-mute">
+            Company → change → explanation → evidence. Hover or open a line for the tag, filing,
+            and date. Gaps stay gaps. Reloading this page does not call the SEC.
+          </p>
+          <div className="grid gap-2 sm:grid-cols-2">
+            {latestLines
+              .filter((l) => ["revenue", "gross_profit", "net_income", "total_assets", "fcf", "inventory"].includes(l.concept))
+              .map((l) => (
+                <div key={l.concept} className="rounded-lg border border-line bg-panel px-3 py-2">
+                  <div className="text-xs text-mute">{l.label}</div>
+                  <div className="mt-1 text-lg tabular-nums">
+                    {l.gap ? <span className="text-warn text-sm">{l.gap}</span> : lineValue(l.value, l.unit)}
+                  </div>
+                  <div className="mt-1 text-xs text-mute">
+                    {trustLabel(l.trust)} · <Provenance line={l} />
+                  </div>
+                </div>
+              ))}
+          </div>
+        </div>
       )}
 
       {tab === "Financials" && (
@@ -106,27 +149,38 @@ export function CompanyView({ pack }: { pack: CompanyPack }) {
               <tr>
                 <th className="px-3 py-2 font-medium">Line</th>
                 <th className="px-3 py-2 font-medium">Value</th>
+                <th className="px-3 py-2 font-medium">YoY</th>
                 <th className="px-3 py-2 font-medium">Trust</th>
-                <th className="px-3 py-2 font-medium">Provenance</th>
+                <th className="px-3 py-2 font-medium">Source</th>
               </tr>
             </thead>
             <tbody>
               {latestLines.map((l) => (
                 <tr key={l.concept} className="border-t border-line">
-                  <td className="px-3 py-2">{l.label}</td>
-                  <td className="px-3 py-2 tabular-nums">
-                    {l.gap ? <span className="text-warn">{l.gap}</span> : money(l.value)}
+                  <td className="px-3 py-2">
+                    <button
+                      type="button"
+                      className="text-left"
+                      onClick={() => setOpenLine(openLine === l.concept ? null : l.concept)}
+                    >
+                      {l.label}
+                    </button>
+                    {openLine === l.concept && (
+                      <div className="mt-2 text-xs text-mute">
+                        {l.provenance.tag ?? "no tag"} · accession {l.provenance.accession ?? "—"} ·{" "}
+                        {l.provenance.form ?? "—"} · filed {l.provenance.filedAt ?? "—"} ·{" "}
+                        {l.provenance.mappingVersion} · confidence {l.provenance.confidence}
+                        {l.provenance.direct ? " · direct" : " · calculated"}
+                      </div>
+                    )}
                   </td>
+                  <td className="px-3 py-2 tabular-nums">
+                    {l.gap ? <span className="text-warn">{l.gap}</span> : lineValue(l.value, l.unit)}
+                  </td>
+                  <td className="px-3 py-2 tabular-nums">{pct(yoyFor(pack.lines, l.concept, pack.company.latestPeriod))}</td>
                   <td className="px-3 py-2 text-mute">{trustLabel(l.trust)}</td>
                   <td className="px-3 py-2 text-xs text-mute">
-                    {l.provenance.tag ? (
-                      <>
-                        {l.provenance.tag} · {l.provenance.form} · {l.provenance.accession} ·{" "}
-                        filed {l.provenance.filedAt} · conf {l.provenance.confidence}
-                      </>
-                    ) : (
-                      "—"
-                    )}
+                    <Provenance line={l} />
                   </td>
                 </tr>
               ))}
