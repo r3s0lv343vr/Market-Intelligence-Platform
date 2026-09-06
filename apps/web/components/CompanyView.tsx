@@ -19,7 +19,8 @@ export function CompanyView({ pack }: { pack: CompanyPack }) {
     <div className="space-y-6">
       <div>
         <div className="text-xs uppercase tracking-wide text-mute">
-          {pack.company.industry} · {pack.company.latestForm} · {pack.company.latestPeriod}
+          {pack.company.industry} · SIC {pack.company.sic} · tier {pack.company.coverageTier} ·{" "}
+          {pack.company.latestForm} · {pack.company.latestPeriod}
         </div>
         <h1 className="mt-1 text-2xl font-semibold tracking-tight">
           {pack.company.name}{" "}

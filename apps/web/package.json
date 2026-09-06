@@ -7,7 +7,7 @@
     "build": "next build --turbopack",
     "start": "next start",
     "lint": "eslint",
-    "test": "tsx --test lib/resolver.test.ts lib/identity.test.ts lib/ingest/*.test.ts lib/packs/*.test.ts",
+    "test": "tsx --test lib/resolver.test.ts lib/identity.test.ts lib/ingest/*.test.ts lib/packs/*.test.ts lib/governance/*.test.ts lib/entity/*.test.ts",
     "ingest:sec": "tsx scripts/ingest-sec.ts",
     "ingest:worker": "tsx scripts/ingest-worker.ts",
     "ingest:worker:once": "tsx scripts/ingest-worker.ts --once"

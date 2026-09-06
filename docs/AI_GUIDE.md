@@ -11,6 +11,7 @@ This guide collates the investigation, enhancement paths, project map, process m
 | Why these constraints exist | [MARKET_INTELLIGENCE_PLATFORM_INVESTIGATION.md](./MARKET_INTELLIGENCE_PLATFORM_INVESTIGATION.md) |
 | Workstreams, processes, phase work packages | [BUILD_PLAN.md](./BUILD_PLAN.md) |
 | Intelligence core (Lattice) decisions | [INTELLIGENCE_CORE_DECISIONS.md](./INTELLIGENCE_CORE_DECISIONS.md) — **deferred until the end of this gated build**; do not implement in P0–P4 |
+| Where live SEC ingest will run | [INGEST_WORKER_HOST.md](./INGEST_WORKER_HOST.md) — not Vercel, not this cloud agent |
 
 This product is **not investment advice**. Extracts are not a substitute for the filing. Rate limits and terms change; re-verify official pages before production.
 
@@ -291,11 +292,11 @@ Do not estimate calendar time. A phase is **done** only when its gate is true. Y
 
 | WP | Work |
 | --- | --- |
-| 0.1 | Monorepo, CI, secrets, logs, deploy skeleton |
-| 0.2 | Ingest plane: identity, token bucket, backoff, watermarks, bronze writer |
-| 0.3 | SEC: stream-extract nightly zips; daily index diff |
-| 0.4 | Source-governance registry + ~30 series from BLS / BEA / EIA / Census / Fed–NY Fed / Treasury (not a FRED mirror) |
-| 0.5 | Entity: CIK, tickers, names, SIC, tiers A/B/C |
+| 0.1 | Monorepo, CI, secrets, logs, deploy skeleton — **coded** |
+| 0.2 | Ingest plane: identity, token bucket, backoff, watermarks, bronze writer — **coded, live off** |
+| 0.3 | SEC: stream-extract nightly zips; daily index diff — **coded; fixture zips only** |
+| 0.4 | Source-governance registry + ~30 series from BLS / BEA / EIA / Census / Fed–NY Fed / Treasury (not a FRED mirror) — **coded; fixture observations** |
+| 0.5 | Entity: CIK, tickers, names, SIC, tiers A/B/C — **coded; demo universe** |
 | 0.6 | Silver `sec_fact` / `sec_submission` with `filed_at`, units, accession |
 | 0.7 | Corporate resolver, period-scoped synonyms, provenance |
 | 0.8 | Gold `statement_line` + read API + company page |

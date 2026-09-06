@@ -1,4 +1,5 @@
-import { companies, driversByIndustry, facts, filings, MAPPING_VERSION } from "../fixtures";
+import { companies, facts, filings, MAPPING_VERSION } from "../fixtures";
+import { driversForIndustry } from "../governance/drivers";
 import { CONCEPTS, identityResidual, resolveConcept } from "../resolver";
 import { buildSignals } from "../signals";
 import type { CompanyPack, StatementLine } from "../types";
@@ -68,7 +69,7 @@ export function buildPack(
             rev && revP && op != null && opP != null ? op / rev - opP / revP : null,
         };
       }),
-    drivers: driversByIndustry[company.industry] ?? [],
+    drivers: driversForIndustry(company.industry),
   };
 
   if (residual != null && Math.abs(residual) > 1) {

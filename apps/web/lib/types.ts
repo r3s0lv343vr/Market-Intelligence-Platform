@@ -4,16 +4,71 @@ export type Duration = "quarter" | "ytd" | "annual";
 
 export type Template = "corporate" | "bank";
 
+export type CoverageTier = "A" | "B" | "C";
+
+export type LicenseClass = "us-government-work" | "public-filing" | "restricted-third-party";
+
 export type Company = {
   cik: string;
   ticker: string;
   name: string;
   industry: string;
   template: Template;
+  sic: string;
+  sicTitle: string;
+  coverageTier: CoverageTier;
   fiscalYearEnd: string;
   latestPeriod: string;
   latestForm: string;
   latestFiledAt: string;
+};
+
+export type Entity = {
+  cik: string;
+  ticker: string;
+  name: string;
+  aliases: string[];
+  sic: string;
+  sicTitle: string;
+  industry: string;
+  template: Template;
+  coverageTier: CoverageTier;
+  fiscalYearEnd: string;
+};
+
+export type CompanySearchHit = {
+  ticker: string;
+  name: string;
+  cik: string;
+  industry: string;
+  template: Template;
+  sic: string;
+  coverageTier: CoverageTier;
+  hasPack: boolean;
+  latestForm: string | null;
+  latestPeriod: string | null;
+};
+
+export type SeriesFrequency = "daily" | "weekly" | "monthly" | "quarterly" | "annual";
+
+export type MacroSeries = {
+  seriesId: string;
+  officialId: string;
+  sourceId: string;
+  agency: string;
+  label: string;
+  unit: string;
+  frequency: SeriesFrequency;
+  copyrightClass: string;
+  citation: string;
+  officialUrl: string;
+  plausibleFor: string[];
+  fixture: {
+    latestDisplay: string;
+    numeric: number | null;
+    asOf: string;
+    note: string;
+  };
 };
 
 export type RawFact = {
@@ -88,6 +143,11 @@ export type SourceRecord = {
   name: string;
   role: string;
   license: string;
+  licenseClass: LicenseClass;
+  attribution: string;
+  officialHome: string;
+  keyEnv: string | null;
+  dailyQueryBudget: string;
   updateCalendar: string;
   lastSuccess: string;
   status: "fixture" | "live";
