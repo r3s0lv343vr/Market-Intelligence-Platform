@@ -1,3 +1,14 @@
+export function lineValue(value: number | null | undefined, unit = "USD") {
+  if (value == null) return "—";
+  if (unit === "shares") {
+    return new Intl.NumberFormat("en-US", { notation: "compact", maximumFractionDigits: 2 }).format(value);
+  }
+  if (unit === "USD/shares") {
+    return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 2 }).format(value);
+  }
+  return money(value);
+}
+
 export function money(value: number | null | undefined) {
   if (value == null) return "—";
   return new Intl.NumberFormat("en-US", {

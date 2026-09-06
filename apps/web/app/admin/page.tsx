@@ -113,6 +113,40 @@ export default function AdminPage() {
         <p className="mt-3 text-xs text-mute">{health.ingest.flagCaution}</p>
       </section>
 
+      <section className="rounded-lg border border-line bg-panel p-4">
+        <h2 className="text-sm font-semibold">Warehouse health</h2>
+        <dl className="mt-3 grid gap-3 sm:grid-cols-3">
+          <div>
+            <dt className="text-xs text-mute">Last ingest</dt>
+            <dd className="mt-1 text-sm">{health.ingest.lastIngestAt ?? "never (fixture warehouse)"}</dd>
+          </div>
+          <div>
+            <dt className="text-xs text-mute">403 / 429</dt>
+            <dd className="mt-1 text-sm tabular-nums">
+              {health.ingest.http403} / {health.ingest.http429}
+            </dd>
+          </div>
+          <div>
+            <dt className="text-xs text-mute">Budget remaining</dt>
+            <dd className="mt-1 text-sm">{health.ingest.budgetRemainingRps} req/s unused · circuit {health.ingest.circuit}</dd>
+          </div>
+          <div>
+            <dt className="text-xs text-mute">Silver facts</dt>
+            <dd className="mt-1 text-sm tabular-nums">{health.silverFacts}</dd>
+          </div>
+          <div>
+            <dt className="text-xs text-mute">Gold statement lines</dt>
+            <dd className="mt-1 text-sm tabular-nums">{health.goldLines}</dd>
+          </div>
+          <div>
+            <dt className="text-xs text-mute">Coverage</dt>
+            <dd className="mt-1 text-sm">
+              A {health.coverage.A} · B {health.coverage.B} · C {health.coverage.C}
+            </dd>
+          </div>
+        </dl>
+      </section>
+
       <dl className="grid gap-3 sm:grid-cols-3">
         <div className="rounded-lg border border-line bg-panel p-3">
           <dt className="text-xs text-mute">Mode</dt>

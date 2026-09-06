@@ -17,8 +17,8 @@ export default async function Home({
           Do not just see the numbers. Understand what is driving them.
         </h1>
         <p className="mt-3 text-sm leading-6 text-mute">
-          Company → change → explanation → evidence. This deployment reads a local warehouse.
-          It does not call SEC, BLS, BEA, or other upstream APIs.
+          Company → change → explanation → evidence. This site uses sample companies only.
+          Real SEC files wait until you have a worker computer. Reloading never calls the SEC.
         </p>
       </section>
 

@@ -297,12 +297,12 @@ Do not estimate calendar time. A phase is **done** only when its gate is true. Y
 | 0.3 | SEC: stream-extract nightly zips; daily index diff — **coded; fixture zips only** |
 | 0.4 | Source-governance registry + ~30 series from BLS / BEA / EIA / Census / Fed–NY Fed / Treasury (not a FRED mirror) — **coded; fixture observations** |
 | 0.5 | Entity: CIK, tickers, names, SIC, tiers A/B/C — **coded; demo universe** |
-| 0.6 | Silver `sec_fact` / `sec_submission` with `filed_at`, units, accession |
-| 0.7 | Corporate resolver, period-scoped synonyms, provenance |
-| 0.8 | Gold `statement_line` + read API + company page |
-| 0.9 | Admin: last ingest, 403/429, budget remaining, coverage |
-| 0.10 | Golden tests on 10–20 known 10-Ks (clean + messy) |
-| 0.11 | Versioned shared company pack + API rate limits (two users, one pack) |
+| 0.6 | Silver `sec_fact` / `sec_submission` with `filed_at`, units, accession — **coded from fixtures; companyfacts parser ready for bronze** |
+| 0.7 | Corporate resolver, period-scoped synonyms, provenance — **coded (~20 lines + GP/FCF)** |
+| 0.8 | Gold `statement_line` + read API + company page — **coded** |
+| 0.9 | Admin: last ingest, 403/429, budget remaining, coverage — **coded** |
+| 0.10 | Golden tests on 10–20 known 10-Ks (clean + messy) — **coded on fixture 10-Ks** |
+| 0.11 | Versioned shared company pack + API rate limits (two users, one pack) — **coded** |
 
 **Gate:** reload = **zero** source calls; two users share one pack; number shows tag/accession/form/filed-at; bronze replay is idempotent; SEC < 8 req/s; banks show unmapped, not fake revenue.
 

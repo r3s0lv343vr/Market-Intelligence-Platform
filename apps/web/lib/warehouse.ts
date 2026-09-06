@@ -1,5 +1,7 @@
 import { listEntities, searchEntities } from "./entity/table";
 import { companies, facts, filings, MAPPING_VERSION } from "./fixtures";
+import { loadSilver } from "./silver/facts";
+import { goldLinesForCik } from "./gold/statements";
 import { listGovernedSources } from "./governance/registry";
 import { listSeries } from "./governance/series";
 import { workerHostPlan } from "./ingest/host";
@@ -51,6 +53,8 @@ export function warehouseHealth() {
     },
     series: series.length,
     facts: facts.length,
+    silverFacts: loadSilver().length,
+    goldLines: companies.reduce((n, c) => n + goldLinesForCik(c.cik).length, 0),
     filings: filings.length,
     packVersion: catalog.livePackVersion,
     mappingVersion: MAPPING_VERSION,

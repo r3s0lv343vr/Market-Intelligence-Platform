@@ -11,6 +11,7 @@ const userRoutes = [
   "app/api/meta/sources/route.ts",
   "app/api/meta/series/route.ts",
   "app/api/meta/entities/route.ts",
+  "app/api/meta/pack/route.ts",
   "app/page.tsx",
   "app/companies/[ticker]/page.tsx",
   "app/admin/page.tsx",

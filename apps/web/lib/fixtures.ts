@@ -1,8 +1,8 @@
 import { companyFromEntity, listEntities } from "./entity/table";
 import type { Company, Filing, RawFact } from "./types";
 
-export const MAPPING_VERSION = "corporate-v1";
-export const PACK_VERSION = "fixture-2026-08-24";
+export const MAPPING_VERSION = "corporate-v2";
+export const PACK_VERSION = "fixture-2026-09-06";
 
 export const filings: Filing[] = [
   {
@@ -69,18 +69,21 @@ function fact(
   accession: string,
   form: string,
   filedAt: string,
+  unit = "USD",
+  dimensions?: string,
 ): RawFact {
   return {
     cik,
     taxonomy: "us-gaap",
     tag,
-    unit: "USD",
+    unit,
     periodEnd,
     duration,
     value,
     accession,
     form,
     filedAt,
+    dimensions,
   };
 }
 
@@ -109,6 +112,20 @@ export const facts: RawFact[] = [
   fact("0001000001", "PaymentsToAcquirePropertyPlantAndEquipment", "2025-12-31", "annual", 8_900_000_000, "0001000001-26-000012", "10-K", "2026-02-18"),
   fact("0001000001", "InterestExpense", "2025-12-31", "annual", 1_840_000_000, "0001000001-26-000012", "10-K", "2026-02-18"),
   fact("0001000001", "InterestExpense", "2024-12-31", "annual", 1_504_000_000, "0001000001-25-000008", "10-K", "2025-02-20"),
+  fact("0001000001", "AssetsCurrent", "2025-12-31", "annual", 58_000_000_000, "0001000001-26-000012", "10-K", "2026-02-18"),
+  fact("0001000001", "LiabilitiesCurrent", "2025-12-31", "annual", 42_000_000_000, "0001000001-26-000012", "10-K", "2026-02-18"),
+  fact("0001000001", "ResearchAndDevelopmentExpense", "2025-12-31", "annual", 3_200_000_000, "0001000001-26-000012", "10-K", "2026-02-18"),
+  fact("0001000001", "ResearchAndDevelopmentExpense", "2024-12-31", "annual", 2_900_000_000, "0001000001-25-000008", "10-K", "2025-02-20"),
+  fact("0001000001", "SellingGeneralAndAdministrativeExpense", "2025-12-31", "annual", 8_100_000_000, "0001000001-26-000012", "10-K", "2026-02-18"),
+  fact("0001000001", "IncomeTaxExpenseBenefit", "2025-12-31", "annual", 890_000_000, "0001000001-26-000012", "10-K", "2026-02-18"),
+  fact("0001000001", "EarningsPerShareDiluted", "2025-12-31", "annual", 3.12, "0001000001-26-000012", "10-K", "2026-02-18", "USD/shares"),
+  fact("0001000001", "CommonStockSharesOutstanding", "2025-12-31", "annual", 1_092_000_000, "0001000001-26-000012", "10-K", "2026-02-18", "shares"),
+  fact("0001000001", "Goodwill", "2025-12-31", "annual", 4_100_000_000, "0001000001-26-000012", "10-K", "2026-02-18"),
+  fact("0001000001", "AccountsPayableCurrent", "2025-12-31", "annual", 19_800_000_000, "0001000001-26-000012", "10-K", "2026-02-18"),
+  fact("0001000001", "PaymentsOfDividends", "2025-12-31", "annual", 1_200_000_000, "0001000001-26-000012", "10-K", "2026-02-18"),
+  fact("0001000001", "Revenues", "2025-09-30", "quarter", 41_200_000_000, "0001000001-25-000044", "10-Q", "2025-11-06"),
+  fact("0001000001", "Revenues", "2025-09-30", "ytd", 128_000_000_000, "0001000001-25-000044", "10-Q", "2025-11-06"),
+  fact("0001000001", "Revenues", "2025-12-31", "annual", 4_000_000_000, "0001000001-26-000012", "10-K", "2026-02-18", "USD", "BusinessSegment=Europe"),
   // Stale tag must not win for 2025
   fact("0001000001", "SalesRevenueNet", "2010-12-31", "annual", 62_500_000_000, "0001000001-11-000003", "10-K", "2011-02-28"),
 
@@ -135,4 +152,6 @@ export const facts: RawFact[] = [
   fact("0001000003", "ContractWithCustomerLiability", "2026-01-31", "annual", 1_880_000_000, "0001000003-26-000021", "10-K", "2026-03-12"),
   fact("0001000003", "NetCashProvidedByUsedInOperatingActivities", "2026-01-31", "annual", 1_420_000_000, "0001000003-26-000021", "10-K", "2026-03-12"),
   fact("0001000003", "PaymentsToAcquirePropertyPlantAndEquipment", "2026-01-31", "annual", 186_000_000, "0001000003-26-000021", "10-K", "2026-03-12"),
+  fact("0001000003", "ResearchAndDevelopmentExpense", "2026-01-31", "annual", 1_640_000_000, "0001000003-26-000021", "10-K", "2026-03-12"),
+  fact("0001000003", "SellingGeneralAndAdministrativeExpense", "2026-01-31", "annual", 980_000_000, "0001000003-26-000021", "10-K", "2026-03-12"),
 ];

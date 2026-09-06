@@ -1,7 +1,8 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
+import { readJson } from "@/lib/api/read";
 import { searchCompanies } from "@/lib/warehouse";
 
 export async function GET(req: NextRequest) {
   const q = req.nextUrl.searchParams.get("q") ?? "";
-  return NextResponse.json({ companies: searchCompanies(q) });
+  return readJson(req, { companies: searchCompanies(q) });
 }

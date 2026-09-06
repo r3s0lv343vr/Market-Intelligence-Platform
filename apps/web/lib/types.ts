@@ -85,6 +85,12 @@ export type RawFact = {
   dimensions?: string;
 };
 
+/** Silver fact: bronze parsed once. Replay uses factKey; never refetch to “fix.” */
+export type SilverFact = RawFact & {
+  dimensions: string;
+  factKey: string;
+};
+
 export type Filing = {
   cik: string;
   accession: string;
@@ -161,6 +167,8 @@ export type CompanyPack = {
   mappingVersion: string;
   generation: number;
   publishedAt: string;
+  shared: true;
+  disclaimer: string;
   signals: Signal[];
   lines: StatementLine[];
   filings: Filing[];

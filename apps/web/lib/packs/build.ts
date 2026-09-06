@@ -1,22 +1,13 @@
-import { companies, facts, filings, MAPPING_VERSION } from "../fixtures";
+import { companies, filings, MAPPING_VERSION } from "../fixtures";
+import { FILING_DISCLAIMER, assertPackContract } from "./contract";
+import { annualGold } from "../gold/statements";
 import { driversForIndustry } from "../governance/drivers";
-import { CONCEPTS, identityResidual, resolveConcept } from "../resolver";
+import { identityResidual } from "../resolver";
 import { buildSignals } from "../signals";
-import type { CompanyPack, StatementLine } from "../types";
+import type { CompanyPack } from "../types";
 
-function periodLines(cik: string, periodEnd: string, duration: StatementLine["duration"]): StatementLine[] {
-  const subset = facts.filter((f) => f.cik === cik);
-  return CONCEPTS.map((c) => resolveConcept(subset, c.concept, periodEnd, duration));
-}
-
-export function allLines(cik: string): StatementLine[] {
-  const periodDurations = [
-    ...new Set(facts.filter((f) => f.cik === cik).map((f) => `${f.periodEnd}|${f.duration}`)),
-  ];
-  return periodDurations.flatMap((key) => {
-    const [periodEnd, duration] = key.split("|") as [string, StatementLine["duration"]];
-    return periodLines(cik, periodEnd, duration);
-  });
+export function allLines(cik: string) {
+  return annualGold(cik);
 }
 
 export function buildPack(
@@ -28,7 +19,7 @@ export function buildPack(
   const company = companies.find((c) => c.ticker.toLowerCase() === ticker.toLowerCase()) ?? null;
   if (!company) return null;
 
-  const lines = allLines(company.cik).filter((l) => l.duration === "annual");
+  const lines = annualGold(company.cik);
   const latestLines = lines.filter((l) => l.periodEnd === company.latestPeriod);
   const residual = identityResidual(latestLines);
 
@@ -38,13 +29,15 @@ export function buildPack(
     mappingVersion: MAPPING_VERSION,
     generation,
     publishedAt,
+    shared: true,
+    disclaimer: FILING_DISCLAIMER,
     signals: buildSignals(company, lines),
     lines,
     filings: filings.filter((f) => f.cik === company.cik),
     peers: companies
       .filter((c) => c.ticker !== company.ticker)
       .map((c) => {
-        const peerLines = allLines(c.cik);
+        const peerLines = annualGold(c.cik);
         const periods = [...new Set(peerLines.map((l) => l.periodEnd))].sort();
         const last = c.latestPeriod;
         const prev = periods.filter((p) => p < last).at(-1);
@@ -87,6 +80,7 @@ export function buildPack(
     });
   }
 
+  assertPackContract(pack);
   return pack;
 }
 
