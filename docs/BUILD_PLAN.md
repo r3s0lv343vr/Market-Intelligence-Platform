@@ -489,7 +489,7 @@ Each phase lists **work packages**, **acceptance**, and **explicit non-goals**. 
 
 **Outcome:** an inspectable path from a physical or policy shock to economies, industries, and companies — exposure first, not a predicted earnings number.
 
-**Do not start until** live SEC gold exists, the P1 change-first page is trusted, and a worker host is running. Full sequence, sources, and accept/reject items: [TRADE_LOGISTICS_DISRUPTION.md](./TRADE_LOGISTICS_DISRUPTION.md).
+**Strategy retained** (7 September 2026). **Do not start until** live SEC gold exists, the P1 change-first page is trusted, and a worker host is running. Full sequence, sources, and accept/reject items: [TRADE_LOGISTICS_DISRUPTION.md](./TRADE_LOGISTICS_DISRUPTION.md).
 
 | WP | Work | Depends on |
 | --- | --- | --- |
