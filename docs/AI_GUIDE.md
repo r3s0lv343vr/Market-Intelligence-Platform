@@ -11,6 +11,7 @@ This guide collates the investigation, enhancement paths, project map, process m
 | Why these constraints exist | [MARKET_INTELLIGENCE_PLATFORM_INVESTIGATION.md](./MARKET_INTELLIGENCE_PLATFORM_INVESTIGATION.md) |
 | Workstreams, processes, phase work packages | [BUILD_PLAN.md](./BUILD_PLAN.md) |
 | Intelligence core (Lattice) decisions | [INTELLIGENCE_CORE_DECISIONS.md](./INTELLIGENCE_CORE_DECISIONS.md) — **deferred until the end of this gated build**; do not implement in P0–P4 |
+| Trade / logistics / disruption | [TRADE_LOGISTICS_DISRUPTION.md](./TRADE_LOGISTICS_DISRUPTION.md) — **parked as P6**; do not implement in P0–P4 |
 | Where live SEC ingest will run | [INGEST_WORKER_HOST.md](./INGEST_WORKER_HOST.md) — not Vercel, not this cloud agent |
 
 This product is **not investment advice**. Extracts are not a substitute for the filing. Rate limits and terms change; re-verify official pages before production.
@@ -64,7 +65,7 @@ If a request conflicts with these, follow the rules and say so.
 8. **Provenance on every served number.** Tag, accession, form, filed-at, as-filed vs restated, mapping version, **mapping confidence**. Never visually conflate **observed fact**, **calculated measure**, **model output**, and **interpretation**.
 9. **Deterministic math in code.** LLMs must not compute YoY, TTM, FCF, or ranks. AI synthesizes an **evidence package** the backend already built. If the model cannot cite a stored fact, it refuses the figure. Do not train on FRED content.
 10. **No extra source calls to look busy.** No polling BLS/BEA every few minutes. Honor release calendars.
-11. **Do not start P4/P5 to look advanced.** Chat, econometrics, and buy/sell signals amplify wrong mapping.
+11. **Do not start P4/P5/P6 to look advanced.** Chat, econometrics, disruption maps, and buy/sell signals amplify wrong mapping.
 12. **This is not an advice engine.** No autonomous “buy/sell.” Modeling tools are fine; recommendations are a compliance change.
 13. **Design serving for a large audience.** 1,500 users is an early cohort, not the ceiling. Shared packs, quotas, and a partitioned user store from P0. User growth never changes ingest.
 14. **Source-governance registry.** Every connector has keys, limits, attribution, license class, and update calendar. Do not assume identical commercial-use or redistribution rights.
@@ -362,6 +363,12 @@ Snapshot OLS/panel + methodology; vintage macro policy; SSO/RLS/export audit; go
 
 **Gate:** a panel job cannot exhaust the API box; results show N, `as_of`, mapping version, hash; no cross-tenant leaks; quotas hold when the audience is large.
 
+### P6 — External disruption traces
+
+Parked. Comtrade / PortWatch / weather / ACLED traces after live gold and a trusted P1 page. See [TRADE_LOGISTICS_DISRUPTION.md](./TRADE_LOGISTICS_DISRUPTION.md). Do not implement in P0–P4.
+
+**Gate:** event confidence ≠ financial-impact confidence; hypothesized edges labeled; no invented supply chains; user traffic never calls those agencies.
+
 ---
 
 ## 8. First slice (smallest product that is still the product)
@@ -429,6 +436,7 @@ Do not treat this as P0 scope.
 6. Decision journal, composite alerts, decision packs  
 7. Explainable quality flags (not a secret fraud score)  
 8. Licensed prices/estimates only when multiples are required  
+9. External disruption traces (Comtrade / PortWatch / weather / ACLED) — **P6 only**; see [TRADE_LOGISTICS_DISRUPTION.md](./TRADE_LOGISTICS_DISRUPTION.md)  
 
 **Backend upgrade order:** bi-temporal `as_of` → semantic metrics + mapping-as-code → event ingest on the same control plane → event-driven packs → lineage/SLIs/replay → item-chunked search → linkbase resolver + mapping ops → isolated compute.
 

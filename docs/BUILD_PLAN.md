@@ -56,6 +56,7 @@ flowchart TB
 | G | Ops | Data status, SLIs, mapping queue, source health | End-user research UX |
 | H | Extensions | Events, models, AI, stats lab, econometrics | New ingest identities / extra IPs |
 | I | Intelligence | Signals, precompute, driver map, explainable flags | Opaque scores; LLM arithmetic |
+| J | External disruption | Trade / logistics / shock traces (P6) | News dashboards; extra SEC IPs; invented supply chains |
 
 ### 1.2 Phase map (capability layers)
 
@@ -69,7 +70,10 @@ flowchart LR
   P3[P3 Decision tools]
   P4[P4 AI and research]
   P5[P5 Econometrics and teams]
+  P6[P6 External disruption]
   P0 --> P1 --> P2 --> P3 --> P4 --> P5
+  P1 --> P6
+  P4 --> P6
 ```
 
 | Phase | User-visible outcome | Backend that must exist | Hard dependency |
@@ -80,8 +84,9 @@ flowchart LR
 | **P3** | User model on standardized actuals; quality flags; thesis journal; Excel pack | Semantic metrics, job runner, identity tests | P2 `as_of` |
 | **P4** | Filing Q&A with citations; “what changed” brief; mapping suggestions | Item-chunked search, tool-calling into gold API | P3 metrics + diffs |
 | **P5** | Isolated regressions; team workspaces; optional user API; licensed prices if signed | Snapshot compute, RLS/SSO, metric API | P4 retrieval discipline |
+| **P6** | Inspectable traces from weather/conflict/policy/port shocks to companies | Trade/logistics/disruption/exposure tables + one composer | P1 mapping QA + live warehouse; filing geography for company edges |
 
-**Do not start P4 or P5 to “look advanced.”** They amplify whatever is wrong in P0–P2.
+**Do not start P4, P5, or P6 to “look advanced.”** They amplify whatever is wrong in P0–P2.
 
 ### 1.3 Dependency map (what blocks what)
 
@@ -479,6 +484,33 @@ Each phase lists **work packages**, **acceptance**, and **explicit non-goals**. 
 - A panel job cannot exhaust the API box
 - Every econometric result shows N, `as_of`, mapping version, data hash
 - Team notes/models are not visible across tenants
+
+### Phase 6 — External disruption traces
+
+**Outcome:** an inspectable path from a physical or policy shock to economies, industries, and companies — exposure first, not a predicted earnings number.
+
+**Do not start until** live SEC gold exists, the P1 change-first page is trusted, and a worker host is running. Full sequence, sources, and accept/reject items: [TRADE_LOGISTICS_DISRUPTION.md](./TRADE_LOGISTICS_DISRUPTION.md).
+
+| WP | Work | Depends on |
+| --- | --- | --- |
+| 6.0 | Evidence classes + split confidence | P1, Lattice evidence rule |
+| 6.1 | UN Comtrade → country–partner–HS (cached) | Worker, registry |
+| 6.2 | IMF PortWatch evaluation + port/route nodes | 6.1 |
+| 6.3 | World Bank / LPI structural vulnerability | 6.1 |
+| 6.4 | ECMWF at port/route points only | 6.2 |
+| 6.5 | ACLED + geospatial intersect (account required) | 6.2 |
+| 6.6 | Filing-reported exposure edges | P4 text or earlier extract |
+| 6.7 | Bidirectional traces in the company UI | 6.0–6.6 |
+| 6.8 | Analogues / interpretable effect ranges | 5.1, 6.4 |
+
+**P6 gate**
+
+- Event confidence ≠ financial-impact confidence
+- Inferred/hypothesized edges are labeled
+- No invented company supply chain from an industry average
+- User traffic never calls these agencies
+
+**P6 non-goals:** news sentiment, AIS clone, EPS point forecasts, four engine services, a second SEC IP.
 
 ---
 
