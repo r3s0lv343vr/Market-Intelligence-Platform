@@ -485,6 +485,8 @@ Each phase lists **work packages**, **acceptance**, and **explicit non-goals**. 
 - Every econometric result shows N, `as_of`, mapping version, data hash
 - Team notes/models are not visible across tenants
 
+Lead/lag scoring of permitted high-frequency precursors against later official prints is **P5**, not a second product. See [ECONOMIC_DATA_AGILITY.md](./ECONOMIC_DATA_AGILITY.md). Do not implement that brief in P0–P4.
+
 ### Phase 6 — External disruption traces
 
 **Outcome:** an inspectable path from a physical or policy shock to economies, industries, and companies — exposure first, not a predicted earnings number.

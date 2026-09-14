@@ -11,6 +11,7 @@ This guide collates the investigation, enhancement paths, project map, process m
 | Why these constraints exist | [MARKET_INTELLIGENCE_PLATFORM_INVESTIGATION.md](./MARKET_INTELLIGENCE_PLATFORM_INVESTIGATION.md) |
 | Workstreams, processes, phase work packages | [BUILD_PLAN.md](./BUILD_PLAN.md) |
 | Intelligence core (Lattice) decisions | [INTELLIGENCE_CORE_DECISIONS.md](./INTELLIGENCE_CORE_DECISIONS.md) — **deferred until the end of this gated build**; do not implement in P0–P4 |
+| Economic data agility (complements Lattice) | [ECONOMIC_DATA_AGILITY.md](./ECONOMIC_DATA_AGILITY.md) — **parked**; confirmation / scoring / substitution later; not a second product; do not implement in P0–P4 |
 | Trade / logistics / disruption | [TRADE_LOGISTICS_DISRUPTION.md](./TRADE_LOGISTICS_DISRUPTION.md) — **parked as P6**; do not implement in P0–P4 |
 | Where live SEC ingest will run | [INGEST_WORKER_HOST.md](./INGEST_WORKER_HOST.md) — not Vercel, not this cloud agent |
 
@@ -359,7 +360,7 @@ Tools the AI may call: active signals, peer panel, driver map, scanner AST, fili
 
 ### P5 — Econometrics, teams, commercial data
 
-Snapshot OLS/panel + methodology; vintage macro policy; SSO/RLS/export audit; gold metric API; licensed prices **only if contracted**.
+Snapshot OLS/panel + methodology; vintage macro policy; SSO/RLS/export audit; gold metric API; licensed prices **only if contracted**. Precursor **scoring** against later official vintages (economic-data agility brief) belongs here, not on the company page — see [ECONOMIC_DATA_AGILITY.md](./ECONOMIC_DATA_AGILITY.md).
 
 **Gate:** a panel job cannot exhaust the API box; results show N, `as_of`, mapping version, hash; no cross-tenant leaks; quotas hold when the audience is large.
 
@@ -437,6 +438,7 @@ Do not treat this as P0 scope.
 7. Explainable quality flags (not a secret fraud score)  
 8. Licensed prices/estimates only when multiples are required  
 9. External disruption traces (Comtrade / PortWatch / weather / ACLED) — **P6 only**; see [TRADE_LOGISTICS_DISRUPTION.md](./TRADE_LOGISTICS_DISRUPTION.md)  
+10. Economic-data agility (confirmation, substitution, precursor scoring) — **complements Lattice**; P5/P6 only; see [ECONOMIC_DATA_AGILITY.md](./ECONOMIC_DATA_AGILITY.md)  
 
 **Backend upgrade order:** bi-temporal `as_of` → semantic metrics + mapping-as-code → event ingest on the same control plane → event-driven packs → lineage/SLIs/replay → item-chunked search → linkbase resolver + mapping ops → isolated compute.
 

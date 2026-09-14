@@ -7,6 +7,8 @@
 
 This document compiles the proposed intelligence-core enhancements for **individual** accept or reject. It is not a build plan and does not change the running fixture app.
 
+Related: [ECONOMIC_DATA_AGILITY.md](./ECONOMIC_DATA_AGILITY.md) — high-frequency sensing and validation **complements** this compiler; it is not a second Lattice and is not implemented in P0–P4.
+
 ---
 
 ## How to use this file
@@ -210,7 +212,7 @@ These stay out unless you add them later as new items:
 
 If an Intelligence Core is named at all, the version worth wanting is **a claim compiler on gold packs** — P1 done carefully — not a second platform.
 
-Do not pause ingest, bronze, resolver, or shared packs for a nine-module Lattice build.
+Do not pause ingest, bronze, resolver, or shared packs for a nine-module Lattice build. Do not add an Economic Nervous System beside it; agility methods attach later as claim rules, registry substitution, P5 scoring, and P6 traces — see [ECONOMIC_DATA_AGILITY.md](./ECONOMIC_DATA_AGILITY.md).
 
 ---
 

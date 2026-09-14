@@ -8,7 +8,7 @@
 
 This file is how that brief enters the repo: as a gated workstream, not as engines in the running app.
 
-Related: [INTELLIGENCE_CORE_DECISIONS.md](./INTELLIGENCE_CORE_DECISIONS.md) (Lattice — also deferred). This workstream **is** Lattice applied to external shocks. Do not stand up a second intelligence platform.
+Related: [INTELLIGENCE_CORE_DECISIONS.md](./INTELLIGENCE_CORE_DECISIONS.md) (Lattice — also deferred); [ECONOMIC_DATA_AGILITY.md](./ECONOMIC_DATA_AGILITY.md) (sensor confirmation, substitution, and scoring — complements this workstream). This workstream **is** Lattice applied to external shocks. Do not stand up a second intelligence platform.
 
 ---
 
