@@ -1,10 +1,11 @@
 # Trace — Trade, Logistics & Disruption Intelligence
 
-**Status:** Parked. Accepted as a **later workstream**, not as current build work.  
+**Status:** Strategy **retained**. Parked for implementation.  
 **Do not implement in P0–P4.** Do not add connectors, graphs, or UI until the gates below are true.  
 **Product:** Trace Market Intelligence (`TraceMI/0.1`)  
 **Source brief:** *Trace / Lattice — Trade, Logistics & Disruption Intelligence* (September 2026)  
-**Decision recorded:** 7 September 2026 — park in the plan; mark items individually when the warehouse is live.
+**Decision recorded:** 7 September 2026 — park in the plan.  
+**Retained:** 7 September 2026 — keep this as the intended later (P6) strategy; mark items individually when the warehouse is live.
 
 This file is how that brief enters the repo: as a gated workstream, not as engines in the running app.
 
