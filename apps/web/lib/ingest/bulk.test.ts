@@ -124,9 +124,14 @@ test("live bulk streams zips through the identified client and does not fetch mi
   });
   assert.equal(result.action, "bronze-bulk-extracted");
   assert.equal(result.contactedSec, true);
+  assert.equal(result.companyfacts.mode, "extracted");
   assert.equal(calls, 3);
   assert.equal(result.indexDiff.missingCount, 1);
   assert.equal(result.userImpact, "none");
+  assert.match(
+    readFileSync(path.join(dir, "data/bronze/sec/companyfacts/live/files/CIK0001000001.json"), "utf8"),
+    /0001000001/,
+  );
 
   const replay = await runSecBulkIngest({
     now: new Date("2026-08-24T08:30:00.000Z"),
@@ -137,6 +142,19 @@ test("live bulk streams zips through the identified client and does not fetch mi
   });
   assert.equal(calls, 3);
   assert.equal(replay.contactedSec, false);
+
+  const nextNight = await runSecBulkIngest({
+    now: new Date("2026-08-25T08:30:00.000Z"),
+    env: liveEnv,
+    cwd: dir,
+    plane,
+    knownAccessions: [],
+  });
+  assert.equal(nextNight.action, "bronze-bulk-reconciled");
+  assert.equal(nextNight.companyfacts.mode, "skipped-live-exists");
+  assert.equal(nextNight.submissions.mode, "skipped-live-exists");
+  assert.equal(calls, 6);
+  assert.equal(nextNight.contactedSec, true);
 });
 
 test("local fixture zip extract never calls fetch", async () => {

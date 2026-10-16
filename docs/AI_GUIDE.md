@@ -13,7 +13,9 @@ This guide collates the investigation, enhancement paths, project map, process m
 | Intelligence core (Lattice) decisions | [INTELLIGENCE_CORE_DECISIONS.md](./INTELLIGENCE_CORE_DECISIONS.md) — **deferred until the end of this gated build**; do not implement in P0–P4 |
 | Economic data agility (complements Lattice) | [ECONOMIC_DATA_AGILITY.md](./ECONOMIC_DATA_AGILITY.md) — **parked**; confirmation / scoring / substitution later; not a second product; do not implement in P0–P4 |
 | Trade / logistics / disruption | [TRADE_LOGISTICS_DISRUPTION.md](./TRADE_LOGISTICS_DISRUPTION.md) — **parked as P6**; do not implement in P0–P4 |
-| Where live SEC ingest will run | [INGEST_WORKER_HOST.md](./INGEST_WORKER_HOST.md) — not Vercel, not this cloud agent |
+| Where we are / what next | [STATUS.md](./STATUS.md) — tracking; storage is one extract then reconcile |
+| Where live SEC ingest will run | [INGEST_WORKER_HOST.md](./INGEST_WORKER_HOST.md) — home/office ISP; not Vercel; not another cloud VPS after 403 |
+| Company geography / map | [COMPANY_GEOGRAPHY.md](./COMPANY_GEOGRAPHY.md) — **parked**; company-first cached map, not live OSINT |
 
 This product is **not investment advice**. Extracts are not a substitute for the filing. Rate limits and terms change; re-verify official pages before production.
 
@@ -58,7 +60,7 @@ If a request conflicts with these, follow the rules and say so.
 
 1. **User traffic never hits source APIs.** Browser, mobile, product API handlers, and user jobs must not call `data.sec.gov`, BLS, BEA, Census, Treasury, EIA, FRED, or similar. They read the warehouse.
 2. **One ingest identity per source.** The SEC counts **10 req/s per requester across all machines**. Do not add IPs to “scale” ingest. Target ~5–8 SEC req/s.
-3. **Bulk first.** Nightly `companyfacts.zip` and `submissions.zip`; DERA quarterly face financials for backfill. Per-CIK JSON only for new accessions you do not have.
+3. **Bulk first, unpack once.** Download nightly `companyfacts.zip` and `submissions.zip`; **extract CIK JSON on the first accepted night only**. Later nights save the new zips + daily index (reconcile). DERA quarterly face financials for backfill. Per-CIK JSON only for new accessions you do not have. Do not keep a new full unpack every night.
 4. **Identify automated traffic.** Descriptive `User-Agent` with organization name and a real contact email. Default library user-agents get `403`.
 5. **Cache by accession.** A disseminated filing does not change. Do not refetch because a user reloaded a page.
 6. **Bronze is immutable.** Fixes are a new mapping version + rebuild from silver. Never “fix” a bad zip by crawling HTML.
@@ -296,7 +298,7 @@ Do not estimate calendar time. A phase is **done** only when its gate is true. Y
 | --- | --- |
 | 0.1 | Monorepo, CI, secrets, logs, deploy skeleton — **coded** |
 | 0.2 | Ingest plane: identity, token bucket, backoff, watermarks, bronze writer — **coded, live off** |
-| 0.3 | SEC: stream-extract nightly zips; daily index diff — **coded; fixture zips only** |
+| 0.3 | SEC: first night stream-extract into `live/`; later nights zip + index only; daily index diff — **coded; fixture zips only; live SEC off** |
 | 0.4 | Source-governance registry + ~30 series from BLS / BEA / EIA / Census / Fed–NY Fed / Treasury (not a FRED mirror) — **coded; fixture observations** |
 | 0.5 | Entity: CIK, tickers, names, SIC, tiers A/B/C — **coded; demo universe** |
 | 0.6 | Silver `sec_fact` / `sec_submission` with `filed_at`, units, accession — **coded from fixtures; companyfacts parser ready for bronze** |

@@ -9,7 +9,7 @@ P0 research UI on a **fixture warehouse**. The website does not call SEC, BLS, B
 There are two planes:
 
 1. **Website (serving)** — what people use. It only reads the **live** pack. A page load never waits for a download.
-2. **Nightly worker (ingest)** — a timer at **3:30 a.m. US Eastern**. It streams `companyfacts.zip` and `submissions.zip` into write-once bronze and diffs the daily index (lists missing accessions; does not fetch them). User packs are not rebuilt until silver/gold. You do not click this.
+2. **Nightly worker (ingest)** — a timer at **3:30 a.m. US Eastern**. **First** accepted night streams `companyfacts.zip` and `submissions.zip` and unpacks **once** into `live/` bronze. **Later** nights save the new zips and diff the daily index (lists missing accessions; does not fetch them or unpack a second universe). User packs are not rebuilt until silver/gold. You do not click this.
 
 While the worker runs, people anywhere in the world keep using the current copy. When they refresh or open another page, they get a new copy only after a generation is published.
 
@@ -41,10 +41,14 @@ Git auto-deploy needs the [Vercel GitHub app](https://github.com/apps/vercel) in
 
 ## Docs
 
+- [docs/STATUS.md](docs/STATUS.md) — **what is done, what is next, storage truth**
 - [docs/AI_GUIDE.md](docs/AI_GUIDE.md) — implementer rules
 - [docs/BUILD_PLAN.md](docs/BUILD_PLAN.md) — maps and gates
+- [docs/INGEST_WORKER_HOST.md](docs/INGEST_WORKER_HOST.md) — home/office worker; one full extract then reconcile
+- [docs/COMPANY_GEOGRAPHY.md](docs/COMPANY_GEOGRAPHY.md) — map / place as evidence (parked)
 - [docs/INTELLIGENCE_CORE_DECISIONS.md](docs/INTELLIGENCE_CORE_DECISIONS.md) — intelligence-core items for individual accept/reject ([PDF](docs/INTELLIGENCE_CORE_DECISIONS.pdf))
 - [docs/ECONOMIC_DATA_AGILITY.md](docs/ECONOMIC_DATA_AGILITY.md) — complements Lattice (parked; not P0–P4)
+- [docs/TRADE_LOGISTICS_DISRUPTION.md](docs/TRADE_LOGISTICS_DISRUPTION.md) — P6 traces (parked)
 
 ## Design rule
 
