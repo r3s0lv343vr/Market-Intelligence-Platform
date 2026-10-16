@@ -6,6 +6,8 @@ Agents and implementers should start with the collated [AI_GUIDE.md](./AI_GUIDE.
 
 It does not estimate calendar duration. Difficulty is described by what must exist, what it depends on, and what breaks if you skip it.
 
+**The map will move.** Evolution of this product is inevitable: sources, storage engines, and phase boundaries will change. When they do, update [STATUS.md](./STATUS.md), this plan, and [DATA_STORAGE.md](./DATA_STORAGE.md). Do not leave chat-only “new requirements” that contradict the repo. Parked briefs stay parked until marked include.
+
 **North star:** collect once → normalize → store → calculate → cache → serve many. Users never hit source APIs.
 
 **Product journey:** `COMPANY → CHANGE → EXPLANATION → EVIDENCE → CONNECTIONS`
@@ -203,29 +205,37 @@ flowchart TB
 
 ```mermaid
 flowchart LR
-  subgraph backfill [Backfill — once / rare]
-    ZIP[Nightly companyfacts + submissions zips]
+  subgraph backfill [Backfill — once]
+    ZIP[companyfacts + submissions zips]
     DERA[DERA quarterly face financials]
+    LIVE[live/ CIK JSON tree]
   end
 
-  subgraph daily [Daily reconcile]
-    IDX[Daily / full index]
-    DIFF[Accessions we do not have]
-    PULL[Fetch only those files]
+  subgraph daily [Daily reconcile — automatic]
+    NZIP[Today’s zips]
+    CRC[CRC-32 vs live/ sidecars]
+    PATCH[Rewrite changed CIK JSON only]
+    IDX[master.idx]
+    DIFF[New accessions vs watermark]
   end
 
-  subgraph surge [Filing-season incremental]
-    ATOM[Latest-filings feed]
-    TIER[Priority: watchlist / Tier A first]
-    PACKR[Rebuild affected packs]
+  subgraph serve [User access]
+    SILVER[Silver upsert by factKey]
+    GOLD[Resolver + gold]
+    PACK[Staging packs]
+    PUB[Publish generation]
+    UI[Website reads live pack]
   end
 
-  ZIP --> BRONZE[(Bronze)]
-  DERA --> BRONZE
-  IDX --> DIFF --> PULL --> BRONZE
-  ATOM --> TIER --> PULL
-  BRONZE --> SILVER --> GOLD --> PACKR
+  ZIP --> LIVE
+  DERA --> BRONZE[(Bronze zips)]
+  NZIP --> CRC --> PATCH --> LIVE
+  IDX --> DIFF
+  LIVE --> SILVER --> GOLD --> PACK --> PUB --> UI
+  DIFF -.->|P2: fetch .txt for Tier A only| BRONZE
 ```
+
+Full byte-level description: [DATA_STORAGE.md](./DATA_STORAGE.md). Diffs are computed by the worker (CRC + accession set + factKey). They are **not** a manual review. Humans handle 403s and mapping failures only.
 
 Rules baked into this process:
 
@@ -234,7 +244,7 @@ Rules baked into this process:
 - Cache by accession; never refetch because a user reloaded
 - Priority is queue order, not extra IPs
 - Nightly zip is the safety net if incremental misses
-- **Storage:** unpack the universe **once** (`live/` extract). Later nights download the new zips (few GB) and the daily index. Do not keep a 40–70 GB unpack per night. Keep the last two dated zip folders. Linux **8 GB RAM / 160 GB disk** was sized for that one generation, not for stacked nightly extracts. P6’s 250 GB+ is a later workstream.
+- **Storage:** unpack the universe **once** (`live/` extract). Later nights CRC-compare the new zips and rewrite **changed CIKs only**, plus `master.idx`. Do not keep a 40–70 GB unpack per night. Keep the last two dated zip folders. Linux **8 GB RAM / 160 GB disk** was sized for that one generation, not for stacked nightly extracts. P6’s 250 GB+ is a later workstream.
 
 ### 2.3 Mapping and quality process
 

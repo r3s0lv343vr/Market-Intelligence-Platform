@@ -40,7 +40,7 @@ export function markLiveExtract(
         firstExtractDay: meta.day,
         extracted: meta.extracted,
         skipped: meta.skipped,
-        note: "Live CIK files are the first full extract. Later nights save a new zip and the daily index; they do not unpack a second universe.",
+        note: "Live CIK files are the first full extract. Later nights CRC-compare the new zip and rewrite only changed CIKs; they do not unpack a second universe.",
       },
       null,
       2,

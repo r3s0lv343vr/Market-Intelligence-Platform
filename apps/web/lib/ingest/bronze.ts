@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { createWriteStream, existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { createWriteStream, existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
 import { pipeline } from "node:stream/promises";
 import type { Readable } from "node:stream";
 import path from "node:path";
@@ -73,21 +73,39 @@ export function writeBronzeFile(
   return { path: dest, sha256: digest, skipped: false };
 }
 
+export function readBronzeCrc32(relativeName: string, cwd = process.cwd()): number | null {
+  const dest = bronzePath(relativeName, cwd);
+  const metaPath = `${dest}.meta.json`;
+  if (!existsSync(metaPath)) return null;
+  try {
+    const meta = JSON.parse(readFileSync(metaPath, "utf8")) as { crc32?: number };
+    return typeof meta.crc32 === "number" ? meta.crc32 : null;
+  } catch {
+    return null;
+  }
+}
+
 export async function writeBronzeStream(
   relativeName: string,
   stream: Readable,
-  meta: { sourceUrl: string; retrievedAt: string; entry?: string },
+  meta: { sourceUrl: string; retrievedAt: string; entry?: string; crc32?: number },
   cwd = process.cwd(),
-  ifExists: "throw" | "skip" = "throw",
+  ifExists: "throw" | "skip" | "replace" = "throw",
 ): Promise<{ path: string; sha256: string; skipped: boolean; bytes: number }> {
   const dest = bronzePath(relativeName, cwd);
   if (existsSync(dest)) {
     if (ifExists === "skip") {
       return { path: dest, sha256: "", skipped: true, bytes: 0 };
     }
-    throw new BronzeImmutableError(
-      `Bronze object already exists: ${relativeName}. Replay skips or rebuilds silver; it does not overwrite bronze.`,
-    );
+    if (ifExists === "replace") {
+      unlinkSync(dest);
+      const metaPath = `${dest}.meta.json`;
+      if (existsSync(metaPath)) unlinkSync(metaPath);
+    } else {
+      throw new BronzeImmutableError(
+        `Bronze object already exists: ${relativeName}. Dated zips are write-once; only live/ CIK files may be replaced on reconcile.`,
+      );
+    }
   }
   mkdirSync(path.dirname(dest), { recursive: true });
   const hash = createHash("sha256");

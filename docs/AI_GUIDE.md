@@ -14,6 +14,7 @@ This guide collates the investigation, enhancement paths, project map, process m
 | Economic data agility (complements Lattice) | [ECONOMIC_DATA_AGILITY.md](./ECONOMIC_DATA_AGILITY.md) — **parked**; confirmation / scoring / substitution later; not a second product; do not implement in P0–P4 |
 | Trade / logistics / disruption | [TRADE_LOGISTICS_DISRUPTION.md](./TRADE_LOGISTICS_DISRUPTION.md) — **parked as P6**; do not implement in P0–P4 |
 | Where we are / what next | [STATUS.md](./STATUS.md) — tracking; storage is one extract then reconcile |
+| Bronze / silver / packs / daily diffs | [DATA_STORAGE.md](./DATA_STORAGE.md) — automatic CRC + factKey upsert; users read live packs |
 | Where live SEC ingest will run | [INGEST_WORKER_HOST.md](./INGEST_WORKER_HOST.md) — home/office ISP; not Vercel; not another cloud VPS after 403 |
 | Company geography / map | [COMPANY_GEOGRAPHY.md](./COMPANY_GEOGRAPHY.md) — **parked**; company-first cached map, not live OSINT |
 
@@ -60,10 +61,10 @@ If a request conflicts with these, follow the rules and say so.
 
 1. **User traffic never hits source APIs.** Browser, mobile, product API handlers, and user jobs must not call `data.sec.gov`, BLS, BEA, Census, Treasury, EIA, FRED, or similar. They read the warehouse.
 2. **One ingest identity per source.** The SEC counts **10 req/s per requester across all machines**. Do not add IPs to “scale” ingest. Target ~5–8 SEC req/s.
-3. **Bulk first, unpack once.** Download nightly `companyfacts.zip` and `submissions.zip`; **extract CIK JSON on the first accepted night only**. Later nights save the new zips + daily index (reconcile). DERA quarterly face financials for backfill. Per-CIK JSON only for new accessions you do not have. Do not keep a new full unpack every night.
+3. **Bulk first, unpack once, CRC-reconcile after.** Download nightly zips. Extract CIK JSON into `live/` on the **first** accepted night. Later nights compare zip CRC-32 to live sidecars and rewrite **changed CIKs only**, plus `master.idx`. Diffs are automatic (`DATA_STORAGE.md`). Do not keep a new full unpack every night.
 4. **Identify automated traffic.** Descriptive `User-Agent` with organization name and a real contact email. Default library user-agents get `403`.
 5. **Cache by accession.** A disseminated filing does not change. Do not refetch because a user reloaded a page.
-6. **Bronze is immutable.** Fixes are a new mapping version + rebuild from silver. Never “fix” a bad zip by crawling HTML.
+6. **Dated bronze zips are immutable.** Fixes are a new mapping version + rebuild from silver. `live/` CIK files may be replaced when the new zip’s CRC differs. Never “fix” a bad zip by crawling HTML.
 7. **Missing is missing.** Never coerce a gap to zero. Banks without a bank template are unmapped, not fake “revenue.”
 8. **Provenance on every served number.** Tag, accession, form, filed-at, as-filed vs restated, mapping version, **mapping confidence**. Never visually conflate **observed fact**, **calculated measure**, **model output**, and **interpretation**.
 9. **Deterministic math in code.** LLMs must not compute YoY, TTM, FCF, or ranks. AI synthesizes an **evidence package** the backend already built. If the model cannot cite a stored fact, it refuses the figure. Do not train on FRED content.
@@ -476,6 +477,8 @@ Do not treat this as P0 scope.
 ---
 
 ## 16. Feature decision filter
+
+**Evolution is inevitable.** The project map in [BUILD_PLAN.md](./BUILD_PLAN.md) will change. When it does, record it in [STATUS.md](./STATUS.md) and [DATA_STORAGE.md](./DATA_STORAGE.md) if bytes or reconcile change. Do not treat an old sketch as secretly replaced.
 
 Before adding an API, dataset, model, or UI module, all of these should be mostly yes:
 

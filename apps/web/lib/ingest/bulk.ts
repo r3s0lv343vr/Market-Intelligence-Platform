@@ -13,7 +13,7 @@ import { IngestControlPlane } from "./control-plane";
 import { diffAccessions, masterIdxUrl, parseMasterIdx } from "./daily-index";
 import { liveIngestDecision, SEC_BULK_URLS, type IngestEnv } from "./policy";
 import { easternDateKey } from "./schedule";
-import { extractZipToBronze, streamWebBodyToBronze } from "./zip-extract";
+import { extractZipToBronze, reconcileZipToLive, streamWebBodyToBronze } from "./zip-extract";
 
 export function isEphemeralServingHost(env: IngestEnv = process.env): boolean {
   return env.VERCEL === "1" || Boolean(env.AWS_LAMBDA_FUNCTION_NAME) || env.TRACE_INGEST_HOST_ROLE !== "worker";
@@ -157,9 +157,19 @@ async function extractOrSkipLive(opts: {
   retrievedAt: string;
   day: string;
   cwd: string;
-}): Promise<{ extracted: number; skipped: number; mode: "extracted" | "skipped-live-exists" }> {
+}): Promise<
+  | { mode: "extracted"; extracted: number; skipped: number }
+  | { mode: "reconciled"; changed: number; unchanged: number; added: number }
+> {
   if (liveExtractDone(opts.cwd, opts.dataset)) {
-    return { extracted: 0, skipped: 0, mode: "skipped-live-exists" };
+    const result = await reconcileZipToLive({
+      zipPath: opts.zipPath,
+      relativePrefix: liveFilesPrefix(opts.dataset),
+      sourceUrl: opts.sourceUrl,
+      retrievedAt: opts.retrievedAt,
+      cwd: opts.cwd,
+    });
+    return { mode: "reconciled", ...result };
   }
   const result = await extractZipToBronze({
     zipPath: opts.zipPath,

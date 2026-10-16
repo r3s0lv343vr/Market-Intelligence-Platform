@@ -45,7 +45,7 @@ P0 work packages 0.1–0.11: **coded on fixtures.** Gate still open for *live* S
 
 1. **Home/office worker** on a residential or small-office ISP — always-on, one IPv4, Linux (WSL2 Ubuntu on the ThinkCentre is fine), Node, three ingest flags **only** on that box.  
 2. **Refuse test** (flags off) → **one** `ingest:worker:once`. 403 → circuit, no retry, then webmaster if it is a real block.  
-3. If HTTP works: first night **full extract** into `live/`; later nights **zip + index** only; copy gold packs to Hostinger when silver/gold run from that bronze.  
+3. If HTTP works: first night **full extract** into `live/`; later nights **CRC-reconcile** changed CIKs + `master.idx`; silver/gold then new packs to Hostinger. See [DATA_STORAGE.md](./DATA_STORAGE.md).  
 4. If HTTP stays blocked: **PDS** (paid) or stay on fixtures. Not a third VPS, VPN, or proxy.  
 5. **P1 on fixtures** when you say **build P1** — change-first page, explainable flags, peers, curated drivers. Not a screener-first, not Palantir clones, not live maps.
 
@@ -60,7 +60,7 @@ Do not start P4/P5/P6, Akashic, OpenFoundry, or trading VPS to look advanced.
 | Project / workstreams | [BUILD_PLAN.md](./BUILD_PLAN.md) §1 | Written |
 | Phase gates P0–P6 | [BUILD_PLAN.md](./BUILD_PLAN.md) §1.2, §3 | Written |
 | Process (ingest → bronze → silver → gold) | [BUILD_PLAN.md](./BUILD_PLAN.md) §2 | Written |
-| SEC: backfill once, then daily reconcile | [BUILD_PLAN.md](./BUILD_PLAN.md) §2.2 and here | **Restated** so storage cannot be misread |
+| SEC: backfill once, then daily reconcile | [DATA_STORAGE.md](./DATA_STORAGE.md), [BUILD_PLAN.md](./BUILD_PLAN.md) §2.2 | CRC + factKey; **not** a manual diff |
 | Company geography / map UX | [COMPANY_GEOGRAPHY.md](./COMPANY_GEOGRAPHY.md) | **Parked** — first-class later, not Akashic |
 
 ---
@@ -81,6 +81,7 @@ Steady state after night one (Linux): roughly **OS + ~40–70 GB live extract + 
 ## Related docs
 
 - [AI_GUIDE.md](./AI_GUIDE.md) — hard rules  
+- [DATA_STORAGE.md](./DATA_STORAGE.md) — daily reconcile, diffs, packs  
 - [INGEST_WORKER_HOST.md](./INGEST_WORKER_HOST.md) — where ingest may run  
 - [BUILD_PLAN.md](./BUILD_PLAN.md) — phases  
 - [COMPANY_GEOGRAPHY.md](./COMPANY_GEOGRAPHY.md) — map vision (parked)  

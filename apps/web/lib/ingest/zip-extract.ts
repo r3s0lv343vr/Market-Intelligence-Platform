@@ -1,7 +1,7 @@
-import { createReadStream } from "node:fs";
+import { createReadStream, existsSync } from "node:fs";
 import { Readable } from "node:stream";
 import yauzl from "yauzl";
-import { writeBronzeStream, ZipSlipError } from "./bronze";
+import { bronzePath, readBronzeCrc32, writeBronzeStream, ZipSlipError } from "./bronze";
 
 function openZip(zipPath: string): Promise<yauzl.ZipFile> {
   return new Promise((resolve, reject) => {
@@ -77,6 +77,7 @@ export async function extractZipToBronze(opts: {
               sourceUrl: opts.sourceUrl,
               retrievedAt: opts.retrievedAt,
               entry: entry.fileName,
+              crc32: entry.crc32 >>> 0,
             },
             opts.cwd,
             "skip",
@@ -93,6 +94,78 @@ export async function extractZipToBronze(opts: {
   });
 
   return { extracted, skipped };
+}
+
+/**
+ * Apply a newer bulk zip onto an existing live/ tree.
+ * Equality is the zip CRC-32 vs the sidecar written on first extract — no second full unpack.
+ */
+export async function reconcileZipToLive(opts: {
+  zipPath: string;
+  relativePrefix: string;
+  sourceUrl: string;
+  retrievedAt: string;
+  cwd?: string;
+}): Promise<{ changed: number; unchanged: number; added: number }> {
+  const zip = await openZip(opts.zipPath);
+  let changed = 0;
+  let unchanged = 0;
+  let added = 0;
+
+  await new Promise<void>((resolve, reject) => {
+    zip.on("error", reject);
+    zip.on("end", resolve);
+    zip.readEntry();
+    zip.on("entry", (entry: yauzl.Entry) => {
+      void (async () => {
+        try {
+          if (skipEntry(entry.fileName)) {
+            zip.readEntry();
+            return;
+          }
+          if (entry.fileName.split(/[/\\]/).some((seg) => seg === "..")) {
+            throw new ZipSlipError(`Refusing zip entry: ${entry.fileName}`);
+          }
+          const base = entry.fileName.split("/").filter(Boolean).at(-1);
+          if (!base) {
+            zip.readEntry();
+            return;
+          }
+          const relativeName = `${opts.relativePrefix.replace(/\/$/, "")}/${base}`;
+          const crc32 = entry.crc32 >>> 0;
+          const dest = bronzePath(relativeName, opts.cwd);
+          const prior = readBronzeCrc32(relativeName, opts.cwd);
+          if (prior === crc32) {
+            unchanged += 1;
+            zip.readEntry();
+            return;
+          }
+          const existed = existsSync(dest);
+          const stream = await openEntry(zip, entry);
+          await writeBronzeStream(
+            relativeName,
+            stream,
+            {
+              sourceUrl: opts.sourceUrl,
+              retrievedAt: opts.retrievedAt,
+              entry: entry.fileName,
+              crc32,
+            },
+            opts.cwd,
+            existed ? "replace" : "skip",
+          );
+          if (existed) changed += 1;
+          else added += 1;
+          zip.readEntry();
+        } catch (err) {
+          zip.close();
+          reject(err);
+        }
+      })();
+    });
+  });
+
+  return { changed, unchanged, added };
 }
 
 export async function streamWebBodyToBronze(

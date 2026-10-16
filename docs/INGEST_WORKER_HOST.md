@@ -15,10 +15,13 @@ First accepted night
   → save dated zips; diff master.idx (list missing accessions; do not fetch .txt)
 
 Later nights
-  → download that night’s zips (few GB) + daily index
-  → do not unpack a second copy of the universe
-  → keep the last two dated zip folders; live/ extract stays
-  → silver/gold later rebuild from the latest zip (not a new 800k-file tree each night)
+  → download that night’s zips (few GB)
+  → CRC-32 compare each zip entry to live/ sidecars; rewrite changed CIK JSON only
+  → daily master.idx vs accession watermark (list; no .txt fetch in WP 0.3)
+  → keep the last two dated zip folders; never delete live/
+  → silver upsert by factKey → gold → new pack generation for the website
+
+How diffs are evaluated (automatic vs human): [DATA_STORAGE.md](./DATA_STORAGE.md).
 ```
 
 SEC **republishes full zips** every night. Trace does **not** keep a full **unpack** every night. That was the original scope; a dated-folder unpack would have been overbearing and is not the worker behavior.

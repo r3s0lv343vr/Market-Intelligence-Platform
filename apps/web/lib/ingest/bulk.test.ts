@@ -9,7 +9,7 @@ import { IngestControlPlane } from "./control-plane";
 import { extractLocalZipToBronze, liveBulkDecision, runSecBulkIngest } from "./bulk";
 import { diffAccessions, parseMasterIdx } from "./daily-index";
 import { ZipSlipError } from "./bronze";
-import { extractZipToBronze } from "./zip-extract";
+import { extractZipToBronze, reconcileZipToLive } from "./zip-extract";
 
 function makeZip(dir: string, name: string, entries: Record<string, string>): string {
   const zipPath = path.join(dir, name);
@@ -151,10 +151,46 @@ test("live bulk streams zips through the identified client and does not fetch mi
     knownAccessions: [],
   });
   assert.equal(nextNight.action, "bronze-bulk-reconciled");
-  assert.equal(nextNight.companyfacts.mode, "skipped-live-exists");
-  assert.equal(nextNight.submissions.mode, "skipped-live-exists");
+  assert.equal(nextNight.companyfacts.mode, "reconciled");
+  assert.equal(nextNight.submissions.mode, "reconciled");
+  if (nextNight.companyfacts.mode === "reconciled") {
+    assert.equal(nextNight.companyfacts.unchanged, 1);
+    assert.equal(nextNight.companyfacts.changed, 0);
+  }
   assert.equal(calls, 6);
   assert.equal(nextNight.contactedSec, true);
+});
+
+test("reconcile rewrites only CIK files whose zip CRC changed", async () => {
+  const dir = mkdtempSync(path.join(tmpdir(), "trace-crc-"));
+  const first = makeZip(dir, "a.zip", {
+    "CIK0001000001.json": '{"cik":"0001000001"}',
+    "CIK0001000002.json": '{"cik":"0001000002"}',
+  });
+  await extractZipToBronze({
+    zipPath: first,
+    relativePrefix: "sec/companyfacts/live/files",
+    sourceUrl: "fixture://a",
+    retrievedAt: "2026-08-24T08:30:00.000Z",
+    cwd: dir,
+  });
+  const second = makeZip(dir, "b.zip", {
+    "CIK0001000001.json": '{"cik":"0001000001","rev":2}',
+    "CIK0001000002.json": '{"cik":"0001000002"}',
+  });
+  const result = await reconcileZipToLive({
+    zipPath: second,
+    relativePrefix: "sec/companyfacts/live/files",
+    sourceUrl: "fixture://b",
+    retrievedAt: "2026-08-25T08:30:00.000Z",
+    cwd: dir,
+  });
+  assert.equal(result.changed, 1);
+  assert.equal(result.unchanged, 1);
+  assert.match(
+    readFileSync(path.join(dir, "data/bronze/sec/companyfacts/live/files/CIK0001000001.json"), "utf8"),
+    /rev/,
+  );
 });
 
 test("local fixture zip extract never calls fetch", async () => {

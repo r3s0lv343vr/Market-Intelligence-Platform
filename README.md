@@ -42,6 +42,7 @@ Git auto-deploy needs the [Vercel GitHub app](https://github.com/apps/vercel) in
 ## Docs
 
 - [docs/STATUS.md](docs/STATUS.md) — **what is done, what is next, storage truth**
+- [docs/DATA_STORAGE.md](docs/DATA_STORAGE.md) — bronze/silver/gold, daily reconcile, how users see updates
 - [docs/AI_GUIDE.md](docs/AI_GUIDE.md) — implementer rules
 - [docs/BUILD_PLAN.md](docs/BUILD_PLAN.md) — maps and gates
 - [docs/INGEST_WORKER_HOST.md](docs/INGEST_WORKER_HOST.md) — home/office worker; one full extract then reconcile
