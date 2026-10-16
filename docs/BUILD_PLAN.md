@@ -2,7 +2,7 @@
 
 This is the build plan for the platform described in [MARKET_INTELLIGENCE_PLATFORM_INVESTIGATION.md](./MARKET_INTELLIGENCE_PLATFORM_INVESTIGATION.md). It includes the **project map** (what is built, in what order, with what dependencies), the **process map** (how work and data move), and the **build sequence** (what “done” means at each gate).
 
-Agents and implementers should start with the collated [AI_GUIDE.md](./AI_GUIDE.md).
+Agents and implementers should start with the collated [AI_GUIDE.md](./AI_GUIDE.md). Tracking (done / next / storage): [STATUS.md](./STATUS.md).
 
 It does not estimate calendar duration. Difficulty is described by what must exist, what it depends on, and what breaks if you skip it.
 
@@ -234,6 +234,7 @@ Rules baked into this process:
 - Cache by accession; never refetch because a user reloaded
 - Priority is queue order, not extra IPs
 - Nightly zip is the safety net if incremental misses
+- **Storage:** unpack the universe **once** (`live/` extract). Later nights download the new zips (few GB) and the daily index. Do not keep a 40–70 GB unpack per night. Keep the last two dated zip folders. Linux **8 GB RAM / 160 GB disk** was sized for that one generation, not for stacked nightly extracts. P6’s 250 GB+ is a later workstream.
 
 ### 2.3 Mapping and quality process
 
@@ -351,7 +352,7 @@ Each phase lists **work packages**, **acceptance**, and **explicit non-goals**. 
 | --- | --- | --- | --- |
 | 0.1 | Monorepo, CI, secrets, structured logs, deploy skeleton | — | 0.2 |
 | 0.2 | Ingest control plane: identity, token bucket, backoff, watermark table, bronze writer | 0.1 | 0.3 design |
-| 0.3 | SEC adapter: nightly `companyfacts.zip` + `submissions.zip` stream-extract; daily index diff | 0.2 | — |
+| 0.3 | SEC adapter: first-night `companyfacts.zip` + `submissions.zip` stream-extract into `live/`; later nights zip + index reconcile (no second unpack); daily index diff | 0.2 | — |
 | 0.4 | Source-governance registry + ~30 series from BLS / BEA / EIA / Census / Fed–NY Fed / Treasury (not a FRED mirror) | 0.2 | 0.3 |
 | 0.5 | Entity table: CIK, tickers, names, SIC, coverage tier A/B/C | 0.3 | 0.4 |
 | 0.6 | Silver facts with `filed_at`, units, accession, **dimensions**, duration (Q vs YTD vs annual) | 0.3 | 0.5 |

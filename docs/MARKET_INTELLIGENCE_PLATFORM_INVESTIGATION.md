@@ -1042,7 +1042,7 @@ Beyond a token bucket:
 - Calendar-aware schedulers (do not poll BLS hourly)
 - Idempotent load keys: `(source, accession or series, content_hash)`
 
-`submissions.zip` is a batch-engineering problem (hundreds of thousands of JSON files). Stream-extract into object storage; do not unpack a 500k-file directory onto one disk.
+`submissions.zip` is a batch-engineering problem (hundreds of thousands of JSON files). Stream-extract **once** into a single `live/` tree (or object storage). Do not unpack a new 500k-file directory **every night**. Later nights keep the new zip + index; silver rebuilds from the latest zip. See [STATUS.md](./STATUS.md) and [INGEST_WORKER_HOST.md](./INGEST_WORKER_HOST.md).
 
 ### 20.9 Compute plane for models, stats, and econometrics
 

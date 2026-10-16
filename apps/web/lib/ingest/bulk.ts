@@ -1,5 +1,13 @@
 import { existsSync, readFileSync } from "node:fs";
 import { AGENT_TOKEN } from "../identity";
+import {
+  liveExtractDone,
+  liveFilesPrefix,
+  markLiveExtract,
+  pruneOldDatasetZips,
+  zipRel,
+  type BulkDataset,
+} from "./bronze-layout";
 import { bronzePath, writeBronzeFile } from "./bronze";
 import { IngestControlPlane } from "./control-plane";
 import { diffAccessions, masterIdxUrl, parseMasterIdx } from "./daily-index";
@@ -71,26 +79,31 @@ export async function runSecBulkIngest(opts: {
   const plane = opts.plane ?? new IngestControlPlane(env);
   const sentBefore = plane.snapshot().requestsSent;
 
-  const factsRel = `sec/companyfacts/${day}/companyfacts.zip`;
-  const subsRel = `sec/submissions/${day}/submissions.zip`;
+  const factsRel = zipRel("companyfacts", day);
+  const subsRel = zipRel("submissions", day);
 
   const factsZip = await saveZip(plane, SEC_BULK_URLS.companyfacts, factsRel, retrievedAt, cwd);
-  const factsExtract = await extractZipToBronze({
+  const factsExtract = await extractOrSkipLive({
+    dataset: "companyfacts",
     zipPath: factsZip.path,
-    relativePrefix: `sec/companyfacts/${day}/files`,
     sourceUrl: SEC_BULK_URLS.companyfacts,
     retrievedAt,
+    day,
     cwd,
   });
 
   const subsZip = await saveZip(plane, SEC_BULK_URLS.submissions, subsRel, retrievedAt, cwd);
-  const subsExtract = await extractZipToBronze({
+  const subsExtract = await extractOrSkipLive({
+    dataset: "submissions",
     zipPath: subsZip.path,
-    relativePrefix: `sec/submissions/${day}/files`,
     sourceUrl: SEC_BULK_URLS.submissions,
     retrievedAt,
+    day,
     cwd,
   });
+
+  pruneOldDatasetZips(cwd, "companyfacts");
+  pruneOldDatasetZips(cwd, "submissions");
 
   const idxUrl = masterIdxUrl(now);
   const idxRel = `sec/daily-index/${day}/master.idx`;
@@ -124,9 +137,10 @@ export async function runSecBulkIngest(opts: {
     );
   }
 
+  const firstExtract = factsExtract.mode === "extracted" || subsExtract.mode === "extracted";
   return {
     contactedSec: plane.snapshot().requestsSent > sentBefore,
-    action: "bronze-bulk-extracted" as const,
+    action: firstExtract ? ("bronze-bulk-extracted" as const) : ("bronze-bulk-reconciled" as const),
     userImpact: "none" as const,
     day,
     requestsSent: plane.snapshot().requestsSent - sentBefore,
@@ -134,6 +148,28 @@ export async function runSecBulkIngest(opts: {
     submissions: { zipSkipped: subsZip.skipped, ...subsExtract },
     indexDiff,
   };
+}
+
+async function extractOrSkipLive(opts: {
+  dataset: BulkDataset;
+  zipPath: string;
+  sourceUrl: string;
+  retrievedAt: string;
+  day: string;
+  cwd: string;
+}): Promise<{ extracted: number; skipped: number; mode: "extracted" | "skipped-live-exists" }> {
+  if (liveExtractDone(opts.cwd, opts.dataset)) {
+    return { extracted: 0, skipped: 0, mode: "skipped-live-exists" };
+  }
+  const result = await extractZipToBronze({
+    zipPath: opts.zipPath,
+    relativePrefix: liveFilesPrefix(opts.dataset),
+    sourceUrl: opts.sourceUrl,
+    retrievedAt: opts.retrievedAt,
+    cwd: opts.cwd,
+  });
+  markLiveExtract(opts.cwd, opts.dataset, { day: opts.day, ...result });
+  return { ...result, mode: "extracted" };
 }
 
 export async function extractLocalZipToBronze(opts: {
@@ -145,16 +181,21 @@ export async function extractLocalZipToBronze(opts: {
   const now = opts.now ?? new Date();
   const day = easternDateKey(now);
   const cwd = opts.cwd ?? process.cwd();
-  const relative = `sec/${opts.dataset}/${day}/${opts.dataset}.zip`;
+  const relative = zipRel(opts.dataset, day);
   const written = writeBronzeFile(relative, opts.zipBytes, {
     sourceUrl: "fixture://local-zip",
     retrievedAt: now.toISOString(),
   }, cwd);
-  return extractZipToBronze({
+  if (liveExtractDone(cwd, opts.dataset)) {
+    return { extracted: 0, skipped: 0 };
+  }
+  const extracted = await extractZipToBronze({
     zipPath: written.path,
-    relativePrefix: `sec/${opts.dataset}/${day}/files`,
+    relativePrefix: liveFilesPrefix(opts.dataset),
     sourceUrl: "fixture://local-zip",
     retrievedAt: now.toISOString(),
     cwd,
   });
+  markLiveExtract(cwd, opts.dataset, { day, ...extracted });
+  return extracted;
 }
