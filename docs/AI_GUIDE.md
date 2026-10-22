@@ -15,6 +15,7 @@ This guide collates the investigation, enhancement paths, project map, process m
 | Trade / logistics / disruption | [TRADE_LOGISTICS_DISRUPTION.md](./TRADE_LOGISTICS_DISRUPTION.md) — **parked as P6**; do not implement in P0–P4 |
 | Where we are / what next | [STATUS.md](./STATUS.md) — tracking; storage is one extract then reconcile |
 | Where live SEC ingest will run | [INGEST_WORKER_HOST.md](./INGEST_WORKER_HOST.md) — home/office ISP; not Vercel; not another cloud VPS after 403 |
+| How to cable and schedule the ThinkCentre | [WORKER_SETUP.md](./WORKER_SETUP.md) — laptop is RDP only; SEC uses the house ISP |
 | Company geography / map | [COMPANY_GEOGRAPHY.md](./COMPANY_GEOGRAPHY.md) — **parked**; company-first cached map, not live OSINT |
 
 This product is **not investment advice**. Extracts are not a substitute for the filing. Rate limits and terms change; re-verify official pages before production.

@@ -45,6 +45,7 @@ Git auto-deploy needs the [Vercel GitHub app](https://github.com/apps/vercel) in
 - [docs/AI_GUIDE.md](docs/AI_GUIDE.md) — implementer rules
 - [docs/BUILD_PLAN.md](docs/BUILD_PLAN.md) — maps and gates
 - [docs/INGEST_WORKER_HOST.md](docs/INGEST_WORKER_HOST.md) — home/office worker; one full extract then reconcile
+- [docs/WORKER_SETUP.md](docs/WORKER_SETUP.md) — ThinkCentre on the home router; laptop is RDP only
 - [docs/COMPANY_GEOGRAPHY.md](docs/COMPANY_GEOGRAPHY.md) — map / place as evidence (parked)
 - [docs/INTELLIGENCE_CORE_DECISIONS.md](docs/INTELLIGENCE_CORE_DECISIONS.md) — intelligence-core items for individual accept/reject ([PDF](docs/INTELLIGENCE_CORE_DECISIONS.pdf))
 - [docs/ECONOMIC_DATA_AGILITY.md](docs/ECONOMIC_DATA_AGILITY.md) — complements Lattice (parked; not P0–P4)

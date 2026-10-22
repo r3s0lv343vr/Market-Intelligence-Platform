@@ -2,7 +2,8 @@
 
 **Short answer:** a machine **you** control on a **residential or small-office ISP**. Not Vercel, not Hostinger, not this cloud agent, not another cloud/trading VPS after two 403s.
 
-Tracking: [STATUS.md](./STATUS.md).
+Tracking: [STATUS.md](./STATUS.md).  
+Hands-on cable / RDP / WSL / timer: [WORKER_SETUP.md](./WORKER_SETUP.md).
 
 ## Ingest shape (storage)
 

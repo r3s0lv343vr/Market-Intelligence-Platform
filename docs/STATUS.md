@@ -43,7 +43,7 @@ P0 work packages 0.1–0.11: **coded on fixtures.** Gate still open for *live* S
 
 ## What is next (do not skip)
 
-1. **Home/office worker** on a residential or small-office ISP — always-on, one IPv4, Linux (WSL2 Ubuntu on the ThinkCentre is fine), Node, three ingest flags **only** on that box.  
+1. **Home/office worker** — [WORKER_SETUP.md](./WORKER_SETUP.md): mini PC on the **router** (not through the laptop’s internet), RDP from the laptop to set tasks, then leave it on. One IPv4, WSL2, flags **only** on that box.  
 2. **Refuse test** (flags off) → **one** `ingest:worker:once`. 403 → circuit, no retry, then webmaster if it is a real block.  
 3. If HTTP works: first night **full extract** into `live/`; later nights **zip + index** only; copy gold packs to Hostinger when silver/gold run from that bronze.  
 4. If HTTP stays blocked: **PDS** (paid) or stay on fixtures. Not a third VPS, VPN, or proxy.  
