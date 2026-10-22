@@ -5,6 +5,8 @@
 
 The laptop is a **keyboard and screen**. It is **not** the internet path for EDGAR.
 
+**OS:** Windows 11 Pro is enough. Linux as the only operating system was never required. WSL is optional.
+
 Related: [INGEST_WORKER_HOST.md](./INGEST_WORKER_HOST.md), [STATUS.md](./STATUS.md), [DATA_STORAGE.md](./DATA_STORAGE.md) (if present on this branch).
 
 This agent and Hostinger/Vercel must **never** get the three ingest flags.
@@ -70,28 +72,25 @@ A full-tunnel VPN or “secure browser” on the worker will put EDGAR on the wr
 
 ## 3. Software on the mini PC (from RDP)
 
-Use **WSL2 Ubuntu**, not a long-lived job on `C:\`.
+**You keep Windows 11 Pro.** The project never required wiping the ThinkCentre and installing Linux as the only OS. The worker is **Node.js**. It runs on Windows.
 
-**PowerShell is only the installer.** You do **not** `git clone` or `npm` from PowerShell. Those commands run in the **Ubuntu** window (Linux). A clone on `C:\` or in PowerShell lands on NTFS (`/mnt/c/...`) and is the wrong disk for bronze.
+The cloud VPS tries (Hetzner, DigitalOcean) happened to be Ubuntu. That was the VPS image, not a rule that the home box must be Linux.
 
-**Step A — once, admin PowerShell** (Windows Terminal is fine; the tab must say PowerShell):
+Two valid ways:
+
+| Track | What you install | When to use |
+| --- | --- | --- |
+| **A — Windows (default for this PC)** | [Node.js 22 LTS](https://nodejs.org/) for Windows, Git for Windows | Matches the machine you bought. Use this unless NTFS gets painfully slow on the first extract. |
+| **B — WSL2 Ubuntu (optional)** | Linux *inside* Windows; you still boot Windows | Slightly better for hundreds of thousands of small JSON files. **Not required.** |
+
+### Track A — PowerShell on Windows (no Ubuntu)
+
+Install **Node.js 22 LTS** and **Git for Windows** (defaults are fine). Then in **PowerShell**:
 
 ```powershell
-wsl --install -d Ubuntu-24.04
-```
-
-Reboot if asked. After reboot, Ubuntu will open and ask you to create a **Linux** username and password. That is not your Windows password.
-
-**Step B — every day, Ubuntu** (Start menu → Ubuntu, or Windows Terminal → dropdown → Ubuntu). The prompt looks like `you@trace-ingest:~$`, not `PS C:\Users\...`. Then:
-
-```bash
-sudo apt update && sudo apt install -y git curl
-curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
-sudo apt install -y nodejs
-node -v   # v22.x
-
+node -v    # v22.x
 git clone https://github.com/r3s0lv343vr/Market-Intelligence-Platform.git
-cd Market-Intelligence-Platform/apps/web
+cd Market-Intelligence-Platform\apps\web
 npm install
 npm test
 npm run ingest:sec
@@ -99,7 +98,11 @@ npm run ingest:sec
 
 `ingest:sec` must print the locked User-Agent and **refuse** to contact EDGAR.
 
-Clone and `data/bronze` must live in the **Linux** home (e.g. `/home/you/...`), not `/mnt/c/...`.
+Keep the repo on this PC’s disk (e.g. `C:\trace\Market-Intelligence-Platform`). Do not run the worker from a USB stick or a OneDrive-synced folder.
+
+### Track B — WSL2 (optional)
+
+Only if you want it. Admin PowerShell once: `wsl --install -d Ubuntu-24.04`. Then clone and `npm` in the **Ubuntu** window, under `/home/you/...`, not `/mnt/c/...`.
 
 **256 GB note:** leave Windows updates room. Prefer a **512 GB** swap if you have not bought the disk yet. Do not also use this box as a Steam/photo drive.
 
@@ -107,7 +110,7 @@ Clone and `data/bronze` must live in the **Linux** home (e.g. `/home/you/...`), 
 
 ## 4. Environment (only on this machine)
 
-In WSL, create `apps/web/.env.worker` (do not commit, do not copy to Hostinger/Vercel):
+Create `apps/web/.env.worker` on this PC only (do not commit, do not copy to Hostinger/Vercel):
 
 ```bash
 # apps/web/.env.worker  — worker host only
@@ -118,10 +121,17 @@ TRACE_INGEST_CONFIRM=TraceMI/0.1
 
 Load it only when you intend a live night:
 
-```bash
-cd ~/Market-Intelligence-Platform/apps/web
-set -a && source .env.worker && set +a
+**Windows PowerShell** (track A):
+
+```powershell
+cd C:\trace\Market-Intelligence-Platform\apps\web
+Get-Content .env.worker | ForEach-Object {
+  if ($_ -match '^\s*#' -or $_ -notmatch '=') { return }
+  $k,$v = $_.Split('=',2); Set-Item -Path "Env:$k" -Value $v
+}
 ```
+
+**Ubuntu** (track B only): `set -a && source .env.worker && set +a`
 
 Until the refuse test is green, **leave those unset**.
 
@@ -131,8 +141,8 @@ Until the refuse test is green, **leave those unset**.
 
 ### Refuse test (no flags)
 
-```bash
-cd ~/Market-Intelligence-Platform/apps/web
+```powershell
+cd C:\trace\Market-Intelligence-Platform\apps\web
 npm run ingest:worker:once
 ```
 
@@ -140,9 +150,9 @@ You should see a refuse / fixture result with **`contactedSec` false**. If it tr
 
 ### One live try (flags on, you watching)
 
-```bash
-cd ~/Market-Intelligence-Platform/apps/web
-set -a && source .env.worker && set +a
+Load `.env.worker` (track A or B), then:
+
+```powershell
 npm run ingest:worker:once
 ```
 
@@ -151,16 +161,17 @@ npm run ingest:worker:once
 
 ### Nightly timer (after a successful `once`)
 
-WSL must stay up when nobody is logged into a desktop. On the Windows side, Task Scheduler:
+**Track A (Windows):** Task Scheduler, trigger **At startup**, action:
 
-1. Create task **Run whether user is logged on or not**, trigger **At startup**, action:
+`C:\Program Files\nodejs\npm.cmd`  
+arguments: `run ingest:worker`  
+start in: `C:\trace\Market-Intelligence-Platform\apps\web`  
 
-   `wsl.exe`  
-   arguments: `-d Ubuntu-24.04 -- bash -lc 'cd /home/YOU/Market-Intelligence-Platform/apps/web && set -a && source .env.worker && set +a && npm run ingest:worker'`
+Set the three ingest variables on the task (or a `.env` loader) **only after** a successful watched `once`. Run whether user is logged on or not.
 
-2. `ingest:worker` **sleeps until 3:30 a.m. America/New_York** and then ticks. Keep that process running (the startup task).  
-3. Windows Update: pause active hours so it does not reboot at 03:00.  
-4. Sign-in: a dedicated local Windows user that auto-starts is fine on a box that never leaves the house.
+**Track B (WSL, optional):** startup task runs `wsl.exe` with `npm run ingest:worker` inside Ubuntu.
+
+`ingest:worker` **sleeps until 3:30 a.m. America/New_York**. Windows Update: keep it off that hour. A dedicated local Windows user that auto-starts is fine on a box that never leaves the house.
 
 Do not also run ingest on the laptop, Hostinger, Vercel, or Cursor.
 
@@ -186,7 +197,7 @@ The website stays on Hostinger. Users never wait on this PC. After gold exists, 
 - [ ] Public IP checked **on the mini PC**  
 - [ ] Sleep/hibernate off; power + Ethernet only  
 - [ ] RDP from laptop works  
-- [ ] WSL2 Ubuntu + Node 22 + `npm test` green  
+- [ ] Node 22 + `npm test` green (Windows **or** optional WSL)  
 - [ ] `ingest:sec` / `ingest:worker:once` **without** flags refuses SEC  
 - [ ] One live `once` when you are ready — then timer, not a second IP  
 - [ ] `.env.worker` never on Vercel/Hostinger/git  

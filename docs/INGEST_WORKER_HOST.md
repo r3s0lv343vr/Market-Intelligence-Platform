@@ -3,7 +3,7 @@
 **Short answer:** a machine **you** control on a **residential or small-office ISP**. Not Vercel, not Hostinger, not this cloud agent, not another cloud/trading VPS after two 403s.
 
 Tracking: [STATUS.md](./STATUS.md).  
-Hands-on cable / RDP / WSL / timer: [WORKER_SETUP.md](./WORKER_SETUP.md).
+Hands-on cable / RDP / timer: [WORKER_SETUP.md](./WORKER_SETUP.md). Windows 11 Pro is valid; WSL is optional.
 
 ## Ingest shape (storage)
 
@@ -59,7 +59,7 @@ This agent will not flip the switch and will not call `www.sec.gov` or `data.sec
 
 One always-on worker:
 
-- **Home/office PC** (e.g. ThinkCentre + WSL2 Ubuntu + Node 22) on the house/office ISP  
+- **Home/office PC** (e.g. ThinkCentre, Windows 11 Pro + Node 22) on the house/office ISP  
 - Persistent disk for bronze (not a serverless filesystem)  
 - **One** public IPv4 — do not add a second IP to “scale” ingest  
 - Timer: `npm run ingest:worker` at 3:30 a.m. America/New_York  
@@ -83,7 +83,7 @@ Cloud VPS (Hetzner, DigitalOcean) already **403**’d with a correct User-Agent.
 ## First live pull (when the host exists)
 
 1. Identity: `TraceMI/0.1 (Trace Market Intelligence; tracemarketintelligence@gmail.com)`  
-2. Bronze on persistent disk (WSL2 Linux filesystem, not `C:\` for the 800k files)  
+2. Bronze on persistent disk on that PC (Windows path is fine; WSL is optional)  
 3. Three env vars **only** on that host  
 4. `npm run ingest:worker:once` — first night: stream zips, extract **once** to `live/`, diff `master.idx`  
 5. Do **not** fetch missing filing `.txt` files  
