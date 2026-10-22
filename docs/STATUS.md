@@ -43,7 +43,7 @@ P0 work packages 0.1–0.11: **coded on fixtures.** Gate still open for *live* S
 
 ## What is next (do not skip)
 
-1. **Home/office worker** on a residential or small-office ISP — always-on, one IPv4, Linux (WSL2 Ubuntu on the ThinkCentre is fine), Node, three ingest flags **only** on that box.  
+1. **Home/office worker** — [WORKER_SETUP.md](./WORKER_SETUP.md): mini PC on the **router** (not through the laptop’s internet), RDP from the laptop to set tasks, then leave it on. Windows 11 Pro + Node is enough (WSL optional). One IPv4, flags **only** on that box.  
 2. **Refuse test** (flags off) → **one** `ingest:worker:once`. 403 → circuit, no retry, then webmaster if it is a real block.  
 3. If HTTP works: first night **full extract** into `live/`; later nights **zip + index** only; copy gold packs to Hostinger when silver/gold run from that bronze.  
 4. If HTTP stays blocked: **PDS** (paid) or stay on fixtures. Not a third VPS, VPN, or proxy.  
@@ -82,6 +82,7 @@ Steady state after night one (Linux): roughly **OS + ~40–70 GB live extract + 
 
 - [AI_GUIDE.md](./AI_GUIDE.md) — hard rules  
 - [INGEST_WORKER_HOST.md](./INGEST_WORKER_HOST.md) — where ingest may run  
+- [WORKER_SETUP.md](./WORKER_SETUP.md) — home LAN, RDP from laptop, WSL timer  
 - [BUILD_PLAN.md](./BUILD_PLAN.md) — phases  
 - [COMPANY_GEOGRAPHY.md](./COMPANY_GEOGRAPHY.md) — map vision (parked)  
 - [TRADE_LOGISTICS_DISRUPTION.md](./TRADE_LOGISTICS_DISRUPTION.md) — P6 (parked)  
