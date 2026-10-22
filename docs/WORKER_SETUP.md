@@ -72,13 +72,17 @@ A full-tunnel VPN or “secure browser” on the worker will put EDGAR on the wr
 
 Use **WSL2 Ubuntu**, not a long-lived job on `C:\`.
 
-In **admin** PowerShell on the ThinkCentre:
+**PowerShell is only the installer.** You do **not** `git clone` or `npm` from PowerShell. Those commands run in the **Ubuntu** window (Linux). A clone on `C:\` or in PowerShell lands on NTFS (`/mnt/c/...`) and is the wrong disk for bronze.
+
+**Step A — once, admin PowerShell** (Windows Terminal is fine; the tab must say PowerShell):
 
 ```powershell
 wsl --install -d Ubuntu-24.04
 ```
 
-Reboot if asked. Create a Linux user. Then in Ubuntu:
+Reboot if asked. After reboot, Ubuntu will open and ask you to create a **Linux** username and password. That is not your Windows password.
+
+**Step B — every day, Ubuntu** (Start menu → Ubuntu, or Windows Terminal → dropdown → Ubuntu). The prompt looks like `you@trace-ingest:~$`, not `PS C:\Users\...`. Then:
 
 ```bash
 sudo apt update && sudo apt install -y git curl
