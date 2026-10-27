@@ -34,11 +34,70 @@ No inbound port-forward from the internet is required for ingest. The worker onl
 
 ---
 
+## 0. If you have no monitor (HP Elitebook + ThinkCentre)
+
+You do **not** need to buy a computer monitor for everyday use. You **do** need a picture **once**, so you can turn on Remote Desktop. After that, the Elitebook is the screen.
+
+### What will not work
+
+Do **not** run an HDMI cable from the ThinkCentre into the Elitebook’s HDMI port. On that laptop, HDMI and USB‑C are **outputs** (laptop → TV). They cannot show another computer’s screen. A USB thumb drive also cannot carry video.
+
+The M715q’s video ports on the back are almost always **two DisplayPort** sockets (wide, not HDMI). Your TV/laptop cables are usually HDMI. You will likely need a **DisplayPort-to-HDMI** cable or adapter.
+
+### Choose one way to see the first screen
+
+Pick **one**. Easiest is A.
+
+**A — Borrow a TV or any monitor for 20 minutes (recommended)**
+
+Buy or borrow:
+
+- Ethernet cable (mini PC → home router)  
+- USB keyboard and USB mouse  
+- **DisplayPort-to-HDMI** cable (or DP cable if the TV/monitor has DisplayPort)  
+- The ThinkCentre’s own power brick  
+
+Steps:
+
+1. Put the ThinkCentre on a table next to the TV.  
+2. Power brick into the wall and into the mini PC.  
+3. Ethernet from the mini PC’s **LAN** port (square with a clip, like a fat phone jack) into your **router**, not into the laptop.  
+4. DisplayPort on the mini PC → HDMI on the TV. Set the TV to that HDMI input.  
+5. Plug keyboard and mouse into the mini PC’s USB ports.  
+6. Press the power button on the ThinkCentre. Wait for Windows.  
+7. Do **section 1** below (Remote Desktop + never sleep). Write down the PC name and the LAN IP (example: `192.168.1.40`).  
+8. Unplug the TV. Leave **power + Ethernet** connected. From now on, use the Elitebook (step B’s Remote Desktop part).
+
+**B — Use the Elitebook as a screen (needs one extra gadget)**
+
+Buy a **USB HDMI video capture** dongle (search “HDMI to USB capture”). Also buy DisplayPort-to-HDMI if the mini PC has no HDMI.
+
+1. ThinkCentre DisplayPort → HDMI → **capture dongle** → USB on the Elitebook.  
+2. Keyboard and mouse still plug into the **ThinkCentre**, not the laptop.  
+3. On the Elitebook, open the capture app (often “USB Video” in the Camera app, or VLC → Open Capture Device). You are watching the mini PC; you are not using the laptop as a Windows “second monitor.”  
+4. Ethernet still goes ThinkCentre → **router**.  
+5. Finish section 1, then you can put the capture dongle away and use Remote Desktop.
+
+**C — Do not do this first:** guessing Windows setup with no picture at all. Too easy to get stuck on a login you cannot see.
+
+### After you have Remote Desktop
+
+On the **Elitebook**, same house Wi‑Fi as the router:
+
+1. Press the Windows key, type `Remote Desktop Connection`, open it.  
+2. Computer: the LAN IP you wrote down (or the PC name).  
+3. Sign in with the Windows user you created on the ThinkCentre.  
+4. You should see the ThinkCentre desktop on the laptop. The mini PC no longer needs a TV.
+
+Then continue this file from **section 3** (Node.js + Git on Windows — no Linux required).
+
+---
+
 ## 1. Physical connectivity (do this first)
 
 1. Plug the M715q into **wall power**. It must stay on 24/7.  
 2. Plug **Ethernet** from the mini PC into the router or a switch on that router. Prefer Ethernet over Wi‑Fi.  
-3. First boot: HDMI or DisplayPort + a USB keyboard/mouse (or a KVM). The laptop cannot be the display unless you use a capture/KVM dongle — easiest is one monitor once.  
+3. First boot: see **section 0** if you have no monitor. The Elitebook HDMI port cannot receive the mini PC’s picture.  
 4. Install/activate **Windows 11 Pro** (you already have Pro — you need it for Remote Desktop).  
 5. Windows Settings → System → Remote Desktop → **On**. Note the PC name and the LAN IPv4 (Settings → Network → Ethernet).  
 6. Settings → System → Power: **never sleep / never hibernate** on plugged in. Fast Startup **off**.  
